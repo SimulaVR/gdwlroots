@@ -1,0 +1,11 @@
+# SCsub
+Import('env')
+env.ParseConfig("pkg-config wlroots --cflags --libs")
+env.ParseConfig("pkg-config wayland-server --cflags --libs")
+
+srcs = [
+    "register_types.cpp",
+    "wayland_display.cpp",
+]
+
+env.add_source_files(env.modules_sources, srcs)
