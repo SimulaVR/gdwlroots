@@ -5,7 +5,11 @@ env.ParseConfig("pkg-config wayland-server --cflags --libs")
 
 srcs = [
     "register_types.cpp",
+    "wlr_output.cpp",
     "wayland_display.cpp",
 ]
 
-env.add_source_files(env.modules_sources, srcs)
+module_env = env.Clone()
+module_env.add_source_files(env.modules_sources, srcs)
+module_env.Append(CXXFLAGS=['-DWLR_USE_UNSTABLE'])
+

@@ -56,3 +56,7 @@ WaylandDisplay::WaylandDisplay() {
 	wl_event_loop = wl_display_get_event_loop(wl_display);
 	socket_name = String();
 }
+
+WaylandDisplay::~WaylandDisplay() {
+	wl_display_destroy(wl_display);
+}

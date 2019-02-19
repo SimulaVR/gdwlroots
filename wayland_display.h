@@ -21,6 +21,7 @@ public:
 	void run();
 
 	WaylandDisplay();
+	~WaylandDisplay();
 };
 
 #endif
