@@ -81,10 +81,9 @@ void WlrOutput::_notification(int p_what) {
 }
 
 WlrOutput::WlrOutput() {
+	wlr_output = NULL;
 }
 
 WlrOutput::~WlrOutput() {
-	// TODO: This segfaults
-	//wlr_output_destroy(wlr_output);
-	//wlr_output = NULL;
+	wlr_output_destroy(wlr_output);
 }
