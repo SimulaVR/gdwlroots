@@ -8,7 +8,7 @@ extern "C" {
 
 class WlrRenderer {
 public:
-	virtual struct wlr_renderer *get_wlr_renderer();
+	virtual struct wlr_renderer *get_wlr_renderer() = 0;
 };
 
 #endif

@@ -15,8 +15,8 @@ class WlrGLES2Renderer : public WlrRenderer {
 public:
 	virtual struct wlr_renderer *get_wlr_renderer();
 
-	WlrGles2Renderer(RasterizerGLES2 *rasterizer);
-	~WlrGles2Renderer();
+	WlrGLES2Renderer(RasterizerGLES2 *rasterizer);
+	~WlrGLES2Renderer();
 };
 
 #endif

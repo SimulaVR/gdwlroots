@@ -45,7 +45,7 @@ struct wlr_backend *WlrBackend::get_wlr_backend() {
 WlrBackend::WlrBackend() {
 	auto gles2_rasterizer = dynamic_cast<RasterizerGLES2 *>(VSG::rasterizer);
 	if (gles2_rasterizer != NULL) {
-		renderer = new WlrGles2Renderer(gles2_rasterizer);
+		renderer = new WlrGLES2Renderer(gles2_rasterizer);
 	} else {
 		print_line("Unsupported rasterizer backend");
 		assert(0);

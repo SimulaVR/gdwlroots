@@ -8,15 +8,15 @@ extern "C" {
 #undef static
 }
 
-struct wlr_renderer *WlrGles2Renderer::get_wlr_renderer() {
+struct wlr_renderer *WlrGLES2Renderer::get_wlr_renderer() {
 	return renderer;
 }
 
-WlrGles2Renderer::WlrGles2Renderer(RasterizerGLES2 *p_rasterizer) {
+WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
 	rasterizer = p_rasterizer;
 	renderer = NULL; // TODO
 }
 
-WlrGles2Renderer::~WlrGles2Renderer() {
+WlrGLES2Renderer::~WlrGLES2Renderer() {
 	// TODO: Free wlroots stuff
 }
