@@ -35,8 +35,10 @@ static struct wlr_output_impl output_impl = {
 }
 
 void WlrOutput::_size_changed() {
-	auto size = viewport->get_size();
-	wlr_output_set_custom_mode(wlr_output, size.width, size.height, 0);
+	// TODO: This always returns 0x0, but the internet suggests that it should
+	// work correctly.
+	auto size = viewport->get_visible_rect().size;
+	wlr_output_set_custom_mode(wlr_output, 1280, 720, 0);
 }
 
 void WlrOutput::_bind_methods() {
@@ -61,7 +63,6 @@ void WlrOutput::_notification(int p_what) {
 		wlr_output = (struct wlr_output *)malloc(sizeof(struct wlr_output));
 		wlr_output_init(wlr_output, NULL, &output_impl,
 				display->get_wayland_display());
-		wlr_output_update_custom_mode(wlr_output, 1280, 720, 0);
 		strncpy(wlr_output->make, "Godot", sizeof(wlr_output->make));
 		strncpy(wlr_output->model, "Godot", sizeof(wlr_output->model));
 		// TODO: multiple outputs with unique names
