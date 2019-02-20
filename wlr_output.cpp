@@ -1,6 +1,7 @@
 #include "core/object.h"
 #include "scene/main/viewport.h"
 #include "wayland_display.h"
+#include "wlr_backend.h"
 #include "wlr_output.h"
 #include <stdlib.h>
 #include <typeinfo>
@@ -58,14 +59,25 @@ WaylandDisplay *WlrOutput::get_wayland_display() {
 	return display;
 }
 
+WlrBackend *WlrOutput::get_wlr_backend() {
+	Node *parent = get_parent();
+	WlrBackend *backend = dynamic_cast<WlrBackend *>(parent);
+	while (parent && !backend) {
+		parent = parent->get_parent();
+		backend = dynamic_cast<WlrBackend *>(parent);
+	}
+	return backend;
+}
+
 void WlrOutput::ensure_wlr_output() {
 	if (wlr_output) {
 		return;
 	}
 	// TODO: We probably need a backend
 	auto display = get_wayland_display();
+	auto backend = get_wlr_backend();
 	wlr_output = (struct wlr_output *)calloc(sizeof(struct wlr_output), 1);
-	wlr_output_init(wlr_output, NULL, &output_impl,
+	wlr_output_init(wlr_output, backend->get_wlr_backend(), &output_impl,
 			display->get_wayland_display());
 	strncpy(wlr_output->make, "Godot", sizeof(wlr_output->make));
 	strncpy(wlr_output->model, "Godot", sizeof(wlr_output->model));
