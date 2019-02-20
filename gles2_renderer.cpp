@@ -96,5 +96,5 @@ WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
 }
 
 WlrGLES2Renderer::~WlrGLES2Renderer() {
-	// TODO: Free wlroots stuff
+	wlr_renderer_destroy(&renderer);
 }

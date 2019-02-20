@@ -4,7 +4,6 @@
 #include "wlr_backend.h"
 #include "wlr_output.h"
 #include <stdlib.h>
-#include <typeinfo>
 extern "C" {
 #include <wlr/interfaces/wlr_output.h>
 
@@ -73,7 +72,6 @@ void WlrOutput::ensure_wlr_output() {
 	if (wlr_output) {
 		return;
 	}
-	// TODO: We probably need a backend
 	auto display = get_wayland_display();
 	auto backend = get_wlr_backend();
 	wlr_output = (struct wlr_output *)calloc(sizeof(struct wlr_output), 1);
