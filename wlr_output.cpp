@@ -23,7 +23,7 @@ static bool swap_buffers(struct wlr_output *output, pixman_region32_t *damage) {
 	return false;
 }
 
-static struct wlr_output_impl output_impl = {
+static const struct wlr_output_impl output_impl = {
 	.transform = transform,
 	/*
 	 * wlroots requires these to be implemented, but since Godot handles the

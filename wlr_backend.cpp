@@ -22,7 +22,7 @@ struct wlr_renderer *backend_get_renderer(struct wlr_backend *_backend) {
 	return backend->get_renderer()->get_wlr_renderer();
 }
 
-struct wlr_backend_impl backend_impl = {
+static const struct wlr_backend_impl backend_impl = {
 	.start = backend_start,
 	.destroy = backend_destroy,
 	.get_renderer = backend_get_renderer,

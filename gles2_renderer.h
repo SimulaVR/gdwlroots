@@ -9,8 +9,8 @@ extern "C" {
 }
 
 class WlrGLES2Renderer : public WlrRenderer {
+	struct wlr_renderer renderer;
 	RasterizerGLES2 *rasterizer;
-	struct wlr_renderer *renderer;
 
 public:
 	virtual struct wlr_renderer *get_wlr_renderer();
