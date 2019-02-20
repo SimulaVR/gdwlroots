@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+struct wl_display *WaylandDisplay::get_wayland_display() {
+	return wl_display;
+}
+
 String WaylandDisplay::get_socket_name() const {
 	return socket_name;
 }
@@ -38,12 +42,6 @@ void WaylandDisplay::run() {
 
 void WaylandDisplay::_notification(int p_what) {
 	switch (p_what) {
-	case NOTIFICATION_READY:
-		print_line("notify ready");
-		break;
-	case NOTIFICATION_ENTER_TREE:
-		print_line("notify enter tree");
-		break;
 	case NOTIFICATION_PROCESS:
 		wl_display_flush_clients(wl_display);
 		wl_event_loop_dispatch(wl_event_loop, 0);

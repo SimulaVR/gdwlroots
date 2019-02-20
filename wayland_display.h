@@ -19,6 +19,7 @@ public:
 	String get_socket_name() const;
 	void set_socket_name(const String &name);
 	void run();
+	struct wl_display *get_wayland_display();
 
 	WaylandDisplay();
 	~WaylandDisplay();

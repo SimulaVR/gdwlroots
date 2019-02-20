@@ -1,26 +1,89 @@
 #include "core/object.h"
 #include "scene/main/viewport.h"
+#include "wayland_display.h"
 #include "wlr_output.h"
+#include <stdlib.h>
+#include <typeinfo>
+extern "C" {
+#include <wlr/interfaces/wlr_output.h>
 
-int WlrOutput::get_viewport() {
-	return viewport->get_instance_id();
+static void transform(struct wlr_output *output,
+		enum wl_output_transform transform) {
+	// TODO: Should we transform the viewport?
 }
 
-void WlrOutput::set_viewport(int vp_id) {
-	viewport = static_cast<Viewport*>(ObjectDB::get_instance(vp_id));
+static bool make_current(struct wlr_output *output, int *buffer_age) {
+	/* This space deliberately left blank */
+	return false;
+}
+
+static bool swap_buffers(struct wlr_output *output, pixman_region32_t *damage) {
+	/* This space deliberately left blank */
+	return false;
+}
+
+static struct wlr_output_impl output_impl = {
+	.transform = transform,
+	/*
+	 * wlroots requires these to be implemented, but since Godot handles the
+	 * render lifecycle for us, these are just shims.
+	 */
+	.make_current = make_current,
+	.swap_buffers = swap_buffers,
+};
+
+}
+
+void WlrOutput::_size_changed() {
+	auto size = viewport->get_size();
+	wlr_output_set_custom_mode(wlr_output, size.width, size.height, 0);
 }
 
 void WlrOutput::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_viewport"),
-			&WlrOutput::get_viewport);
-	ClassDB::bind_method(D_METHOD("set_viewport", "viewport"),
-			&WlrOutput::set_viewport);
+	ClassDB::bind_method(D_METHOD("_size_changed"), &WlrOutput::_size_changed);
+}
 
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "viewport",
-				PROPERTY_HINT_OBJECT_ID, "Viewport"),
-			"set_viewport", "get_viewport");
+WaylandDisplay *WlrOutput::get_wayland_display() {
+	Node *parent = get_parent();
+	WaylandDisplay *display = dynamic_cast<WaylandDisplay *>(parent);
+	while (parent && !display) {
+		parent = parent->get_parent();
+		display = dynamic_cast<WaylandDisplay *>(parent);
+	}
+	return display;
+}
+
+void WlrOutput::_notification(int p_what) {
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE: {
+		// TODO: We probably need a backend
+		auto display = get_wayland_display();
+		wlr_output = (struct wlr_output *)malloc(sizeof(struct wlr_output));
+		wlr_output_init(wlr_output, NULL, &output_impl,
+				display->get_wayland_display());
+		wlr_output_update_custom_mode(wlr_output, 1280, 720, 0);
+		strncpy(wlr_output->make, "Godot", sizeof(wlr_output->make));
+		strncpy(wlr_output->model, "Godot", sizeof(wlr_output->model));
+		// TODO: multiple outputs with unique names
+		strncpy(wlr_output->name, "GD-1", sizeof(wlr_output->name));
+		viewport = get_tree()->get_root();
+		viewport->connect("size_changed", this, "_size_changed");
+		_size_changed();
+		wlr_output_create_global(wlr_output);
+		break;
+	}
+	case NOTIFICATION_EXIT_TREE:
+		wlr_output_destroy(wlr_output);
+		viewport->disconnect("size_changed", this, "_size_changed");
+		break;
+	}
 }
 
 WlrOutput::WlrOutput() {
-	/* This space deliberately left blank */
+}
+
+WlrOutput::~WlrOutput() {
+	// TODO: This segfaults
+	//wlr_output_destroy(wlr_output);
+	//wlr_output = NULL;
 }
