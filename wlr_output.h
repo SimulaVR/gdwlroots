@@ -9,10 +9,11 @@ extern "C" {
 class WlrOutput : public Node {
 	GDCLASS(WlrOutput, Node);
 
-	void _size_changed();
-
 	Viewport *viewport;
 	struct wlr_output *wlr_output;
+
+	void _size_changed();
+	void ensure_wlr_output();
 	WaylandDisplay *get_wayland_display();
 
 protected:

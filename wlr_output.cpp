@@ -35,9 +35,12 @@ static struct wlr_output_impl output_impl = {
 }
 
 void WlrOutput::_size_changed() {
+	if (wlr_output == NULL) {
+		return;
+	}
 	// TODO: This always returns 0x0, but the internet suggests that it should
 	// work correctly.
-	auto size = viewport->get_visible_rect().size;
+	//auto size = viewport->get_visible_rect().size;
 	wlr_output_set_custom_mode(wlr_output, 1280, 720, 0);
 }
 
@@ -55,26 +58,33 @@ WaylandDisplay *WlrOutput::get_wayland_display() {
 	return display;
 }
 
+void WlrOutput::ensure_wlr_output() {
+	if (wlr_output) {
+		return;
+	}
+	// TODO: We probably need a backend
+	auto display = get_wayland_display();
+	wlr_output = (struct wlr_output *)calloc(sizeof(struct wlr_output), 1);
+	wlr_output_init(wlr_output, NULL, &output_impl,
+			display->get_wayland_display());
+	strncpy(wlr_output->make, "Godot", sizeof(wlr_output->make));
+	strncpy(wlr_output->model, "Godot", sizeof(wlr_output->model));
+	// TODO: multiple outputs with unique names
+	strncpy(wlr_output->name, "GD-1", sizeof(wlr_output->name));
+	_size_changed();
+	wlr_output_create_global(wlr_output);
+}
+
 void WlrOutput::_notification(int p_what) {
 	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		// TODO: We probably need a backend
-		auto display = get_wayland_display();
-		wlr_output = (struct wlr_output *)malloc(sizeof(struct wlr_output));
-		wlr_output_init(wlr_output, NULL, &output_impl,
-				display->get_wayland_display());
-		strncpy(wlr_output->make, "Godot", sizeof(wlr_output->make));
-		strncpy(wlr_output->model, "Godot", sizeof(wlr_output->model));
-		// TODO: multiple outputs with unique names
-		strncpy(wlr_output->name, "GD-1", sizeof(wlr_output->name));
+	case NOTIFICATION_ENTER_TREE:
 		viewport = get_tree()->get_root();
 		viewport->connect("size_changed", this, "_size_changed");
-		_size_changed();
-		wlr_output_create_global(wlr_output);
+		ensure_wlr_output();
 		break;
-	}
 	case NOTIFICATION_EXIT_TREE:
 		wlr_output_destroy(wlr_output);
+		wlr_output = NULL;
 		viewport->disconnect("size_changed", this, "_size_changed");
 		break;
 	}
@@ -86,4 +96,5 @@ WlrOutput::WlrOutput() {
 
 WlrOutput::~WlrOutput() {
 	wlr_output_destroy(wlr_output);
+	wlr_output = NULL;
 }
