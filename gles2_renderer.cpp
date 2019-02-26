@@ -1,6 +1,8 @@
 #include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <stdint.h>
 #include "drivers/gles2/rasterizer_gles2.h"
+#include "drivers/gles2/rasterizer_storage_gles2.h"
 #include "gles2_renderer.h"
 extern "C" {
 #define static
@@ -9,28 +11,86 @@ extern "C" {
 #include <wlr/render/interface.h>
 #undef static
 
+static const enum wl_shm_format wl_formats[] = {
+	WL_SHM_FORMAT_ARGB8888,
+	WL_SHM_FORMAT_XRGB8888,
+	WL_SHM_FORMAT_ABGR8888,
+	WL_SHM_FORMAT_XBGR8888,
+};
+
+struct gles2_pixel_format {
+	enum wl_shm_format wl_format;
+	GLint gl_format, gl_type;
+	int depth, bpp;
+	bool has_alpha;
+};
+
+static const struct gles2_pixel_format formats[] = {
+	{
+		.wl_format = WL_SHM_FORMAT_ARGB8888,
+		.gl_format = GL_BGRA_EXT,
+		.gl_type = GL_UNSIGNED_BYTE,
+		.depth = 32,
+		.bpp = 32,
+		.has_alpha = true,
+	},
+	{
+		.wl_format = WL_SHM_FORMAT_XRGB8888,
+		.gl_format = GL_BGRA_EXT,
+		.gl_type = GL_UNSIGNED_BYTE,
+		.depth = 24,
+		.bpp = 32,
+		.has_alpha = false,
+	},
+	{
+		.wl_format = WL_SHM_FORMAT_XBGR8888,
+		.gl_format = GL_RGBA,
+		.gl_type = GL_UNSIGNED_BYTE,
+		.depth = 24,
+		.bpp = 32,
+		.has_alpha = false,
+	},
+	{
+		.wl_format = WL_SHM_FORMAT_ABGR8888,
+		.gl_format = GL_RGBA,
+		.gl_type = GL_UNSIGNED_BYTE,
+		.depth = 32,
+		.bpp = 32,
+		.has_alpha = true,
+	},
+};
+
+const struct gles2_pixel_format *get_gles2_format_from_wl(
+		enum wl_shm_format fmt) {
+	for (size_t i = 0; i < sizeof(formats) / sizeof(*formats); ++i) {
+		if (formats[i].wl_format == fmt) {
+			return &formats[i];
+		}
+	}
+	return NULL;
+}
+
 static const enum wl_shm_format *renderer_formats(
 		struct wlr_renderer *renderer, size_t *len) {
-	// TODO
-	return NULL;
+	*len = sizeof(wl_formats) / sizeof(wl_formats[0]);
+	return wl_formats;
 }
 
 static bool renderer_format_supported(
 		struct wlr_renderer *renderer, enum wl_shm_format fmt) {
-	// TODO
-	return false;
+	return get_gles2_format_from_wl(fmt) != NULL;
 }
 
 static struct wlr_texture *renderer_texture_from_pixels(
-		struct wlr_renderer *renderer, enum wl_shm_format fmt,
+		struct wlr_renderer *_renderer, enum wl_shm_format fmt,
 		uint32_t stride, uint32_t width, uint32_t height, const void *data) {
-	// TODO
+	WlrGLES2Renderer *renderer = (WlrGLES2Renderer *)_renderer;
 	return NULL;
 }
 
 static void renderer_init_wl_display(struct wlr_renderer *renderer,
 		struct wl_display *wl_display) {
-	// TODO
+	// TODO: bind EGL
 }
 
 static void renderer_begin(struct wlr_renderer *renderer,
@@ -87,14 +147,15 @@ static const struct wlr_renderer_impl renderer_impl = {
 }
 
 struct wlr_renderer *WlrGLES2Renderer::get_wlr_renderer() {
-	return &renderer;
+	return &wlr_renderer;
 }
 
 WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
 	rasterizer = p_rasterizer;
-	wlr_renderer_init(&renderer, &renderer_impl);
+	storage = dynamic_cast<RasterizerStorageGLES2 *>(rasterizer->get_storage());
+	wlr_renderer_init(&wlr_renderer, &renderer_impl);
 }
 
 WlrGLES2Renderer::~WlrGLES2Renderer() {
-	wlr_renderer_destroy(&renderer);
+	wlr_renderer_destroy(&wlr_renderer);
 }

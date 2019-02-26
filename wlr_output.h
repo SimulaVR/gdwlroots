@@ -20,9 +20,8 @@ class WlrOutput : public Node {
 	WlrBackend *get_wlr_backend();
 
 protected:
-	void _notification(int p_what);
-
 	static void _bind_methods();
+	void _notification(int p_what);
 
 public:
 	WlrOutput();

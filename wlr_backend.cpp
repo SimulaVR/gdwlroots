@@ -1,12 +1,14 @@
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "gles2_renderer.h"
 #include "servers/visual/visual_server_globals.h"
+#include "wayland_display.h"
 #include "wlr_backend.h"
 #include <assert.h>
 #include <stdlib.h>
 extern "C" {
 #include <wlr/backend.h>
 #include <wlr/backend/interface.h>
+#include <wlr/render/wlr_renderer.h>
 
 bool backend_start(struct wlr_backend *backend) {
 	/* This space deliberately left blank */
@@ -42,6 +44,30 @@ struct wlr_backend *WlrBackend::get_wlr_backend() {
 	return (struct wlr_backend *)this;
 }
 
+WaylandDisplay *WlrBackend::get_wayland_display() {
+	Node *parent = get_parent();
+	WaylandDisplay *display = dynamic_cast<WaylandDisplay *>(parent);
+	while (parent && !display) {
+		parent = parent->get_parent();
+		display = dynamic_cast<WaylandDisplay *>(parent);
+	}
+	return display;
+}
+
+void WlrBackend::_notification(int p_what) {
+	WaylandDisplay *display = get_wayland_display();
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE:
+		if (display != initialized_display) {
+			wlr_renderer_init_wl_display(
+				get_renderer()->get_wlr_renderer(),
+				display->get_wayland_display());
+			initialized_display = display;
+		}
+		break;
+	}
+}
+
 WlrBackend::WlrBackend() {
 	auto gles2_rasterizer = dynamic_cast<RasterizerGLES2 *>(VSG::rasterizer);
 	if (gles2_rasterizer != NULL) {
@@ -50,7 +76,6 @@ WlrBackend::WlrBackend() {
 		print_line("Unsupported rasterizer backend");
 		assert(0);
 	}
-	// TODO: Create appropriate renderer for selected rasterizer
 	wlr_backend_init(&backend, &backend_impl);
 }
 
