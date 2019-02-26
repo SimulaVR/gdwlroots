@@ -4,12 +4,14 @@
 #include "wlr_backend.h"
 #include "wlr_compositor.h"
 #include "wlr_output.h"
+#include "wlr_xdg_shell.h"
 
 void register_gdwlroots_types() {
 	ClassDB::register_class<WaylandDisplay>();
 	ClassDB::register_class<WlrBackend>();
 	ClassDB::register_class<WlrCompositor>();
 	ClassDB::register_class<WlrOutput>();
+	ClassDB::register_class<WlrXdgShell>();
 }
 
 void unregister_gdwlroots_types() {

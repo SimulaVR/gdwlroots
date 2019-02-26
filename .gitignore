@@ -1,2 +1,4 @@
 *.o
 *.pyc
+xdg-shell.c
+xdg-shell-protocol.h
