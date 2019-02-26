@@ -3,12 +3,23 @@
 #include "wayland_display.h"
 #include "wlr_xdg_shell.h"
 extern "C" {
+#include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
+
+void WlrXdgShell::handle_new_xdg_surface(
+		struct wl_listener *listener, void *data) {
+	WlrXdgShell *xdg_shell = wl_container_of(
+			listener, xdg_shell, new_xdg_surface);
+	auto surface = new WlrXdgSurface((struct wlr_xdg_surface *)data);
+	xdg_shell->emit_signal("new_surface", surface);
+}
+
 }
 
 void WlrXdgShell::_bind_methods() {
-	/* This space deliberately left blank */
-	/* TODO: signals */
+	ADD_SIGNAL(MethodInfo("new_surface",
+				PropertyInfo(Variant::OBJECT,
+					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 }
 
 /* TODO: Consider abstracting this with a generic wlr node base class */
@@ -28,6 +39,10 @@ void WlrXdgShell::ensure_wlr_xdg_shell() {
 	}
 	auto display = get_wayland_display();
 	wlr_xdg_shell = wlr_xdg_shell_create(display->get_wayland_display());
+	new_xdg_surface.notify = handle_new_xdg_surface;
+	printf("Registered signal for %p\n", this);
+	wl_signal_add(&wlr_xdg_shell->events.new_surface,
+			&new_xdg_surface);
 }
 
 void WlrXdgShell::_notification(int p_what) {
@@ -49,4 +64,8 @@ WlrXdgShell::WlrXdgShell() {
 WlrXdgShell::~WlrXdgShell() {
 	wlr_xdg_shell_destroy(wlr_xdg_shell);
 	wlr_xdg_shell = NULL;
+}
+
+WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
+	wlr_xdg_surface = xdg_surface;
 }
