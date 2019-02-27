@@ -1,5 +1,3 @@
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
 #include <stdint.h>
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "drivers/gles2/rasterizer_storage_gles2.h"
@@ -148,9 +146,8 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	gles2_flush_errors("glTexParameterf");
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, stride / (fmt->bpp / 8));
 	gles2_flush_errors("glPixelStorei");
 
 	if (fmt->swizzle) {
@@ -161,9 +158,6 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 			GL_RGBA, fmt->gl_type, data);
 	gles2_flush_errors("glTexImage2D");
-
-	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, 0);
-	gles2_flush_errors("glPixelStorei (2)");
 
 	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(rid, width, height, fmt);
 	wlr_texture->reference();
