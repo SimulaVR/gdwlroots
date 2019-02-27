@@ -19,14 +19,6 @@ static const enum wl_shm_format wl_formats[] = {
 	WL_SHM_FORMAT_XBGR8888,
 };
 
-struct gles2_pixel_format {
-	enum wl_shm_format wl_format;
-	GLint gl_format, gl_type;
-	int depth, bpp;
-	bool has_alpha;
-	bool swizzle;
-};
-
 static const struct gles2_pixel_format formats[] = {
 	{
 		.wl_format = WL_SHM_FORMAT_ARGB8888,
@@ -173,7 +165,7 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, 0);
 	gles2_flush_errors("glPixelStorei (2)");
 
-	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(rid, width, height);
+	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(rid, width, height, fmt);
 	wlr_texture->reference();
 	return wlr_texture->get_wlr_texture();
 }
@@ -287,10 +279,12 @@ Texture *WlrGLES2Renderer::texture_from_wlr(struct wlr_texture *texture) {
 	return WlrGLES2Texture::texture_from_wlr(texture);
 }
 
-WlrGLES2Texture::WlrGLES2Texture(RID p_texture, int width, int height) {
+WlrGLES2Texture::WlrGLES2Texture(RID p_texture, int width, int height,
+		const struct gles2_pixel_format *fmt) {
 	wlr_texture_init(&state.wlr_texture, &texture_impl);
 	state.godot_texture = this;
 	texture = p_texture;
+	pixel_format = fmt;
 	w = width;
 	h = height;
 }
@@ -308,8 +302,7 @@ RID WlrGLES2Texture::get_rid() const {
 }
 
 bool WlrGLES2Texture::has_alpha() const {
-	// TODO
-	return false;
+	return pixel_format->has_alpha;
 }
 
 void WlrGLES2Texture::set_flags(uint32_t p_flags) {

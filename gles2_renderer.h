@@ -10,6 +10,14 @@ extern "C" {
 #undef static
 }
 
+struct gles2_pixel_format {
+	enum wl_shm_format wl_format;
+	GLint gl_format, gl_type;
+	int depth, bpp;
+	bool has_alpha;
+	bool swizzle;
+};
+
 class WlrGLES2Texture : public Texture {
 	GDCLASS(WlrGLES2Texture, Texture);
 	RES_BASE_EXTENSION("wlrtex");
@@ -20,6 +28,7 @@ class WlrGLES2Texture : public Texture {
 	};
 	struct texture_state state;
 
+	const struct gles2_pixel_format *pixel_format;
 	RID texture;
 	int w, h;
 	uint32_t flags;
@@ -44,7 +53,8 @@ public:
 	uint32_t get_flags() const;
 	void set_flags(uint32_t p_flags);
 
-	WlrGLES2Texture(RID texture, int width, int height);
+	WlrGLES2Texture(RID texture, int width, int height,
+			const struct gles2_pixel_format *pixel_format);
 };
 
 class WlrGLES2Renderer : public WlrRenderer {
