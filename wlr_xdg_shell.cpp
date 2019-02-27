@@ -10,7 +10,8 @@ void WlrXdgShell::handle_new_xdg_surface(
 		struct wl_listener *listener, void *data) {
 	WlrXdgShell *xdg_shell = wl_container_of(
 			listener, xdg_shell, new_xdg_surface);
-	auto surface = new WlrXdgSurface((struct wlr_xdg_surface *)data);
+	auto surface = WlrXdgSurface::from_wlr_xdg_surface(
+			(struct wlr_xdg_surface *)data);
 	xdg_shell->emit_signal("new_surface", surface);
 }
 
@@ -65,15 +66,25 @@ WlrXdgShell::~WlrXdgShell() {
 	wlr_xdg_shell = NULL;
 }
 
+void WlrXdgSurface::_bind_methods() {
+	// TODO
+}
+
 WlrXdgSurface::WlrXdgSurface() {
 	/* Not used */
 }
 
 WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
-	wlr_xdg_surface = xdg_surface;
 	// TODO: Handle surface destroyed
+	wlr_xdg_surface = xdg_surface;
+	xdg_surface->data = this;
 }
 
-void WlrXdgSurface::_bind_methods() {
-	// TODO
+
+WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
+		struct wlr_xdg_surface *xdg_surface) {
+	if (xdg_surface->data) {
+		return (WlrXdgSurface *)xdg_surface->data;
+	}
+	return new WlrXdgSurface(xdg_surface);
 }

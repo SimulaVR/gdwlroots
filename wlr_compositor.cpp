@@ -11,7 +11,7 @@ void WlrCompositor::handle_new_surface(
 		struct wl_listener *listener, void *data) {
 	WlrCompositor *compositor = wl_container_of(
 			listener, compositor, new_surface);
-	auto surface = new WlrSurface((struct wlr_surface *)data);
+	auto surface = WlrSurface::from_wlr_surface((struct wlr_surface *)data);
 	compositor->emit_signal("new_surface", surface);
 }
 

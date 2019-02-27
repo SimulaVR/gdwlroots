@@ -81,6 +81,14 @@ WlrSurface::WlrSurface() {
 }
 
 WlrSurface::WlrSurface(struct wlr_surface *surface) {
-	wlr_surface = surface;
 	// TODO: Handle surface destroyed
+	wlr_surface = surface;
+	surface->data = this;
+}
+
+WlrSurface *WlrSurface::from_wlr_surface(struct wlr_surface *surface) {
+	if (surface->data) {
+		return (WlrSurface *)surface->data;
+	}
+	return new WlrSurface(surface);
 }

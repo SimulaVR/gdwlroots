@@ -16,11 +16,12 @@ class WlrXdgSurface : public Object {
 protected:
 	static void _bind_methods();
 
-	/* Necessary for Object */
-	WlrXdgSurface();
+	WlrXdgSurface(); /* Necessary for Object */
+	WlrXdgSurface(struct wlr_xdg_surface *xdg_surface);
 
 public:
-	WlrXdgSurface(struct wlr_xdg_surface *xdg_surface);
+	static WlrXdgSurface *from_wlr_xdg_surface(
+			struct wlr_xdg_surface *xdg_surface);
 };
 
 class WlrXdgShell : public Node {

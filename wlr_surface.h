@@ -34,17 +34,17 @@ class WlrSurface : public Object {
 protected:
 	static void _bind_methods();
 
-	/* Necessary for Object */
-	WlrSurface();
+	WlrSurface(); // Necessary for Object
+	WlrSurface(struct wlr_surface *surface);
 
 public:
+	static WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
+
 	int get_sx();
 	int get_sy();
 	WlrSurfaceState *get_current_state() const;
 	WlrSurfaceState *get_pending_state() const;
 	WlrSurfaceState *get_previous_state() const;
-
-	WlrSurface(struct wlr_surface *surface);
 };
 
 #endif
