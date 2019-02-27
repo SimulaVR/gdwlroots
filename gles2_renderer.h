@@ -11,16 +11,22 @@ extern "C" {
 }
 
 class WlrGLES2Texture : public Texture {
-	struct wlr_texture wlr_texture;
-
 	GDCLASS(WlrGLES2Texture, Texture);
 	RES_BASE_EXTENSION("wlrtex");
+
+	struct texture_state {
+		struct wlr_texture wlr_texture;
+		struct WlrGLES2Texture *godot_texture;
+	};
+	struct texture_state state;
 
 	RID texture;
 	int w, h;
 	uint32_t flags;
 
 public:
+	static WlrGLES2Texture *texture_from_wlr(struct wlr_texture *texture);
+
 	struct wlr_texture *get_wlr_texture();
 
 	static void wlr_texture_get_size(
@@ -58,6 +64,7 @@ public:
 			uint32_t stride, uint32_t width, uint32_t height, const void *data);
 
 	virtual struct wlr_renderer *get_wlr_renderer();
+	virtual Texture *texture_from_wlr(struct wlr_texture *texture);
 
 	WlrGLES2Renderer(RasterizerGLES2 *rasterizer);
 	~WlrGLES2Renderer();

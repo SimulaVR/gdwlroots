@@ -1,6 +1,7 @@
 #ifndef GDWLR_WLR_SURFACE_H
 #define GDWLR_WLR_SURFACE_H
 #include "core/object.h"
+#include "scene/resources/texture.h"
 extern "C" {
 #include <wlr/types/wlr_surface.h>
 }
@@ -26,8 +27,8 @@ public:
 	WlrSurfaceState(const struct wlr_surface_state *state);
 };
 
-class WlrSurface : public Object {
-	GDCLASS(WlrSurface, Object);
+class WlrSurface : public Resource {
+	GDCLASS(WlrSurface, Resource);
 
 	struct wlr_surface *wlr_surface;
 
@@ -45,6 +46,8 @@ public:
 	WlrSurfaceState *get_current_state() const;
 	WlrSurfaceState *get_pending_state() const;
 	WlrSurfaceState *get_previous_state() const;
+	Ref<Texture> get_texture() const;
+	void send_frame_done();
 };
 
 #endif

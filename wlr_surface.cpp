@@ -1,6 +1,9 @@
+#include <time.h>
+#include "renderer.h"
 #include "wlr_surface.h"
 extern "C" {
 #include <wlr/types/wlr_surface.h>
+#include <wlr/util/log.h>
 }
 
 int WlrSurfaceState::get_width() {
@@ -64,16 +67,32 @@ WlrSurfaceState *WlrSurface::get_previous_state() const {
 	return &state;
 }
 
+Ref<Texture> WlrSurface::get_texture() const {
+	struct wlr_texture *texture = wlr_surface_get_texture(wlr_surface);
+	return Ref<Texture>(
+			WlrRenderer::get_singleton()->texture_from_wlr(texture));
+}
+
+void WlrSurface::send_frame_done() {
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	// TODO: calling clock_gettime here is kind of lame
+	wlr_surface_send_frame_done(wlr_surface, &now);
+}
 
 void WlrSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sx"), &WlrSurface::get_sx);
-	ClassDB::bind_method(D_METHOD("get_sx"), &WlrSurface::get_sy);
+	ClassDB::bind_method(D_METHOD("get_sy"), &WlrSurface::get_sy);
 	ClassDB::bind_method(D_METHOD("get_current_state"),
 			&WlrSurface::get_current_state);
 	ClassDB::bind_method(D_METHOD("get_pending_state"),
 			&WlrSurface::get_pending_state);
 	ClassDB::bind_method(D_METHOD("get_previous_state"),
 			&WlrSurface::get_previous_state);
+	ClassDB::bind_method(D_METHOD("get_texture"),
+			&WlrSurface::get_texture);
+	ClassDB::bind_method(D_METHOD("send_frame_done"),
+			&WlrSurface::send_frame_done);
 }
 
 WlrSurface::WlrSurface() {
@@ -81,6 +100,7 @@ WlrSurface::WlrSurface() {
 }
 
 WlrSurface::WlrSurface(struct wlr_surface *surface) {
+	wlr_log(WLR_DEBUG, "Created surface %p for %p", this, surface);
 	// TODO: Handle surface destroyed
 	wlr_surface = surface;
 	surface->data = this;
@@ -88,7 +108,9 @@ WlrSurface::WlrSurface(struct wlr_surface *surface) {
 
 WlrSurface *WlrSurface::from_wlr_surface(struct wlr_surface *surface) {
 	if (surface->data) {
-		return (WlrSurface *)surface->data;
+		auto s = (WlrSurface *)surface->data;
+		wlr_log(WLR_DEBUG, "Found surface %p for %p", s, surface);
+		return s;
 	}
 	return new WlrSurface(surface);
 }

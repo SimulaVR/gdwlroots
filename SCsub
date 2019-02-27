@@ -6,6 +6,7 @@ env.ParseConfig("pkg-config wayland-server --cflags --libs")
 srcs = [
     "gles2_renderer.cpp",
     "register_types.cpp",
+    "renderer.cpp",
     "wayland_display.cpp",
     "wlr_backend.cpp",
     "wlr_compositor.cpp",

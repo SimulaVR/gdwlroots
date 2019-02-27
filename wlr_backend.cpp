@@ -9,6 +9,7 @@ extern "C" {
 #include <wlr/backend.h>
 #include <wlr/backend/interface.h>
 #include <wlr/render/wlr_renderer.h>
+#include <wlr/util/log.h>
 
 bool backend_start(struct wlr_backend *backend) {
 	/* This space deliberately left blank */
@@ -69,6 +70,7 @@ void WlrBackend::_notification(int p_what) {
 }
 
 WlrBackend::WlrBackend() {
+	wlr_log_init(WLR_DEBUG, NULL);
 	auto gles2_rasterizer = dynamic_cast<RasterizerGLES2 *>(VSG::rasterizer);
 	if (gles2_rasterizer != NULL) {
 		renderer = new WlrGLES2Renderer(gles2_rasterizer);
