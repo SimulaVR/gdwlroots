@@ -14,6 +14,10 @@ class WlrXdgSurface : public Resource {
 
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
+	struct wl_listener destroy;
+
+	static void handle_destroy(struct wl_listener *listener, void *data);
+
 protected:
 	static void _bind_methods();
 

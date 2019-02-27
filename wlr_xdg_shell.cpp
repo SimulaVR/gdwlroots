@@ -81,6 +81,21 @@ void WlrXdgSurface::_bind_methods() {
 			&WlrXdgSurface::get_geometry);
 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
 			&WlrXdgSurface::get_wlr_surface);
+
+	ADD_SIGNAL(MethodInfo("destroy",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+}
+
+extern "C" {
+
+void WlrXdgSurface::handle_destroy(
+		struct wl_listener *listener, void *data) {
+	WlrXdgSurface *xdg_surface = wl_container_of(
+			listener, xdg_surface, destroy);
+	xdg_surface->emit_signal("destroy", xdg_surface);
+}
+
 }
 
 WlrXdgSurface::WlrXdgSurface() {
@@ -88,9 +103,10 @@ WlrXdgSurface::WlrXdgSurface() {
 }
 
 WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
-	// TODO: Handle surface destroyed
 	wlr_xdg_surface = xdg_surface;
 	xdg_surface->data = this;
+	destroy.notify = handle_destroy;
+	wl_signal_add(&xdg_surface->events.destroy, &destroy);
 }
 
 
