@@ -24,24 +24,27 @@ struct gles2_pixel_format {
 	GLint gl_format, gl_type;
 	int depth, bpp;
 	bool has_alpha;
+	bool swizzle;
 };
 
 static const struct gles2_pixel_format formats[] = {
 	{
 		.wl_format = WL_SHM_FORMAT_ARGB8888,
-		.gl_format = GL_BGRA_EXT,
+		.gl_format = GL_RGBA,
 		.gl_type = GL_UNSIGNED_BYTE,
 		.depth = 32,
 		.bpp = 32,
 		.has_alpha = true,
+		.swizzle = true,
 	},
 	{
 		.wl_format = WL_SHM_FORMAT_XRGB8888,
-		.gl_format = GL_BGRA_EXT,
+		.gl_format = GL_RGBA,
 		.gl_type = GL_UNSIGNED_BYTE,
 		.depth = 24,
 		.bpp = 32,
 		.has_alpha = false,
+		.swizzle = true,
 	},
 	{
 		.wl_format = WL_SHM_FORMAT_XBGR8888,
@@ -50,6 +53,7 @@ static const struct gles2_pixel_format formats[] = {
 		.depth = 24,
 		.bpp = 32,
 		.has_alpha = false,
+		.swizzle = false,
 	},
 	{
 		.wl_format = WL_SHM_FORMAT_ABGR8888,
@@ -58,6 +62,7 @@ static const struct gles2_pixel_format formats[] = {
 		.depth = 32,
 		.bpp = 32,
 		.has_alpha = true,
+		.swizzle = false,
 	},
 };
 
@@ -134,7 +139,6 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 	RasterizerStorageGLES2::Texture *texture =
 		storage->texture_owner.getornull(rid);
 
-	// TODO: get GL_BGRA_EXT working (need to reconfigure glad upstream? ugh)
 	storage->texture_allocate(rid, width, height, 0,
 			Image::FORMAT_RGBA8, VS::TEXTURE_TYPE_2D, 0);
 	gles2_flush_errors("texture_allocate");
@@ -144,13 +148,6 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 		wlr_log(WLR_ERROR, "Unsupported pixel format %" PRIu32, wl_fmt);
 		return NULL;
 	}
-
-	// Overwrite Godot GL types with our own
-	//texture->gl_internal_format_cache = fmt->gl_format;
-	//texture->gl_format_cache = fmt->gl_format;
-	texture->gl_internal_format_cache = GL_RGB;
-	texture->gl_format_cache = GL_RGB;
-	texture->gl_type_cache = fmt->gl_type;
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
@@ -163,6 +160,11 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, stride / (fmt->bpp / 8));
 	gles2_flush_errors("glPixelStorei");
+
+	if (fmt->swizzle) {
+		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
+		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+	}
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 			GL_RGBA, fmt->gl_type, data);
