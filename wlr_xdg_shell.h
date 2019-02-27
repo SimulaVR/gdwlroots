@@ -3,13 +3,14 @@
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
+#include "wlr_surface.h"
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
 }
 
-class WlrXdgSurface : public Object {
-	GDCLASS(WlrXdgSurface, Object);
+class WlrXdgSurface : public Resource {
+	GDCLASS(WlrXdgSurface, Resource);
 
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
@@ -20,6 +21,9 @@ protected:
 	WlrXdgSurface(struct wlr_xdg_surface *xdg_surface);
 
 public:
+	WlrSurface *get_wlr_surface() const;
+	Rect2 get_geometry();
+
 	static WlrXdgSurface *from_wlr_xdg_surface(
 			struct wlr_xdg_surface *xdg_surface);
 };

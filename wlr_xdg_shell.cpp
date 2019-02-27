@@ -1,6 +1,7 @@
 #include "core/object.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
+#include "wlr_surface.h"
 #include "wlr_xdg_shell.h"
 extern "C" {
 #include <wayland-server.h>
@@ -66,8 +67,20 @@ WlrXdgShell::~WlrXdgShell() {
 	wlr_xdg_shell = NULL;
 }
 
+Rect2 WlrXdgSurface::get_geometry() {
+	return Rect2(wlr_xdg_surface->geometry.x, wlr_xdg_surface->geometry.y,
+			wlr_xdg_surface->geometry.width, wlr_xdg_surface->geometry.height);
+}
+
+WlrSurface *WlrXdgSurface::get_wlr_surface() const {
+	return WlrSurface::from_wlr_surface(wlr_xdg_surface->surface);
+}
+
 void WlrXdgSurface::_bind_methods() {
-	// TODO
+	ClassDB::bind_method(D_METHOD("get_geometry"),
+			&WlrXdgSurface::get_geometry);
+	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
+			&WlrXdgSurface::get_wlr_surface);
 }
 
 WlrXdgSurface::WlrXdgSurface() {
