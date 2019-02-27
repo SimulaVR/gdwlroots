@@ -18,6 +18,11 @@ class WlrCompositor : public Node {
 	WaylandDisplay *get_wayland_display();
 	WlrBackend *get_wlr_backend();
 
+	struct wl_listener new_surface;
+
+	static void handle_new_surface(
+		struct wl_listener *listener, void *data);
+
 protected:
 	void _notification(int p_what);
 

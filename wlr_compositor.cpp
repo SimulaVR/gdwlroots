@@ -3,13 +3,24 @@
 #include "wayland_display.h"
 #include "wlr_compositor.h"
 #include "wlr_backend.h"
+#include "wlr_surface.h"
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
+
+void WlrCompositor::handle_new_surface(
+		struct wl_listener *listener, void *data) {
+	WlrCompositor *compositor = wl_container_of(
+			listener, compositor, new_surface);
+	auto surface = new WlrSurface((struct wlr_surface *)data);
+	compositor->emit_signal("new_surface", surface);
+}
+
 }
 
 void WlrCompositor::_bind_methods() {
-	/* This space deliberately left blank */
-	/* TODO: new surface signal */
+	ADD_SIGNAL(MethodInfo("new_surface",
+				PropertyInfo(Variant::OBJECT,
+					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrSurface")));
 }
 
 WaylandDisplay *WlrCompositor::get_wayland_display() {
@@ -41,6 +52,8 @@ void WlrCompositor::ensure_wlr_compositor() {
 	auto renderer = backend->get_renderer();
 	wlr_compositor = wlr_compositor_create(
 			display->get_wayland_display(), renderer->get_wlr_renderer());
+	new_surface.notify = handle_new_surface;
+	wl_signal_add(&wlr_compositor->events.new_surface, &new_surface);
 }
 
 void WlrCompositor::_notification(int p_what) {

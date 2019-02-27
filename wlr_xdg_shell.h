@@ -13,6 +13,12 @@ class WlrXdgSurface : public Object {
 
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
+protected:
+	static void _bind_methods();
+
+	/* Necessary for Object */
+	WlrXdgSurface();
+
 public:
 	WlrXdgSurface(struct wlr_xdg_surface *xdg_surface);
 };

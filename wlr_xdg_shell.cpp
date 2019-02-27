@@ -40,7 +40,6 @@ void WlrXdgShell::ensure_wlr_xdg_shell() {
 	auto display = get_wayland_display();
 	wlr_xdg_shell = wlr_xdg_shell_create(display->get_wayland_display());
 	new_xdg_surface.notify = handle_new_xdg_surface;
-	printf("Registered signal for %p\n", this);
 	wl_signal_add(&wlr_xdg_shell->events.new_surface,
 			&new_xdg_surface);
 }
@@ -66,6 +65,15 @@ WlrXdgShell::~WlrXdgShell() {
 	wlr_xdg_shell = NULL;
 }
 
+WlrXdgSurface::WlrXdgSurface() {
+	/* Not used */
+}
+
 WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	wlr_xdg_surface = xdg_surface;
+	// TODO: Handle surface destroyed
+}
+
+void WlrXdgSurface::_bind_methods() {
+	// TODO
 }
