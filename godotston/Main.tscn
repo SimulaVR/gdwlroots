@@ -2,7 +2,7 @@
 
 [ext_resource path="res://Main.gd" type="Script" id=1]
 
-[sub_resource type="PhysicsMaterial" id=4]
+[sub_resource type="PhysicsMaterial" id=1]
 bounce = 0.3
 
 [sub_resource type="LineShape2D" id=2]
@@ -11,7 +11,7 @@ normal = Vector2( 1, 0 )
 [sub_resource type="LineShape2D" id=3]
 normal = Vector2( -1, 0 )
 
-[sub_resource type="LineShape2D" id=1]
+[sub_resource type="LineShape2D" id=4]
 
 [node name="Node" type="Node2D"]
 script = ExtResource( 1 )
@@ -27,8 +27,11 @@ socket_name = "godot-0"
 
 [node name="WlrXdgShell" type="WlrXdgShell" parent="WaylandDisplay"]
 
+[node name="WlrSeat" type="WlrSeat" parent="WaylandDisplay"]
+capabilities = 3
+
 [node name="ViewportBounds" type="StaticBody2D" parent="."]
-physics_material_override = SubResource( 4 )
+physics_material_override = SubResource( 1 )
 
 [node name="Left" type="CollisionShape2D" parent="ViewportBounds"]
 shape = SubResource( 2 )
@@ -37,7 +40,7 @@ shape = SubResource( 2 )
 shape = SubResource( 3 )
 
 [node name="Bottom" type="CollisionShape2D" parent="ViewportBounds"]
-shape = SubResource( 1 )
+shape = SubResource( 4 )
 
 [connection signal="ready" from="WaylandDisplay" to="." method="_on_WaylandDisplay_ready"]
 [connection signal="new_surface" from="WaylandDisplay/WlrXdgShell" to="." method="_on_WlrXdgShell_new_surface"]

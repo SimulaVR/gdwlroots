@@ -9,6 +9,7 @@ func _on_WaylandDisplay_ready():
 func handle_map_surface(surface):
 	var vp = get_viewport().size
 	surface.position = Vector2(vp.x / 2, -surface.get_size().y)
+	surface.focus()
 	add_child(surface)
 
 func handle_unmap_surface(surface):
@@ -17,6 +18,7 @@ func handle_unmap_surface(surface):
 func _on_WlrXdgShell_new_surface(xdg_surface):
 	var surface = Surface.instance()
 	surface.xdg_surface = xdg_surface
+	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
 	surface.connect("map", self, "handle_map_surface")
 	surface.connect("unmap", self, "handle_unmap_surface")
 

@@ -44,6 +44,10 @@ WlrSurfaceState::WlrSurfaceState(const struct wlr_surface_state *state) {
 	this->state = state;
 }
 
+struct wlr_surface *WlrSurface::get_wlr_surface() const {
+	return wlr_surface;
+}
+
 int WlrSurface::get_sx() {
 	return wlr_surface->sx;
 }
@@ -76,7 +80,6 @@ Ref<Texture> WlrSurface::get_texture() const {
 void WlrSurface::send_frame_done() {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
-	// TODO: calling clock_gettime here is kind of lame
 	wlr_surface_send_frame_done(wlr_surface, &now);
 }
 

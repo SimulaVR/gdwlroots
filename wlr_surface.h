@@ -41,6 +41,8 @@ protected:
 public:
 	static WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
 
+	struct wlr_surface *get_wlr_surface() const;
+
 	int get_sx();
 	int get_sy();
 	WlrSurfaceState *get_current_state() const;
