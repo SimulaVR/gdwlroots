@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "core/object.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
@@ -67,6 +68,28 @@ WlrXdgShell::~WlrXdgShell() {
 	wlr_xdg_shell = NULL;
 }
 
+WlrXdgSurface::XdgSurfaceRole WlrXdgSurface::get_role() const {
+	switch (wlr_xdg_surface->role) {
+	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
+		return XDG_SURFACE_ROLE_TOPLEVEL;
+	case WLR_XDG_SURFACE_ROLE_POPUP:
+		return XDG_SURFACE_ROLE_POPUP;
+	case WLR_XDG_SURFACE_ROLE_NONE:
+	default:
+		return XDG_SURFACE_ROLE_NONE;
+	}
+}
+
+WlrXdgToplevel *WlrXdgSurface::get_xdg_toplevel() const {
+	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL);
+	return new WlrXdgToplevel(wlr_xdg_surface->toplevel);
+}
+
+WlrXdgPopup *WlrXdgSurface::get_xdg_popup() const {
+	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_POPUP);
+	return NULL;
+}
+
 Rect2 WlrXdgSurface::get_geometry() {
 	return Rect2(wlr_xdg_surface->geometry.x, wlr_xdg_surface->geometry.y,
 			wlr_xdg_surface->geometry.width, wlr_xdg_surface->geometry.height);
@@ -77,10 +100,19 @@ WlrSurface *WlrXdgSurface::get_wlr_surface() const {
 }
 
 void WlrXdgSurface::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
+	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
+			&WlrXdgSurface::get_xdg_toplevel);
+	ClassDB::bind_method(D_METHOD("get_xdg_popup"),
+			&WlrXdgSurface::get_xdg_popup);
 	ClassDB::bind_method(D_METHOD("get_geometry"),
 			&WlrXdgSurface::get_geometry);
 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
 			&WlrXdgSurface::get_wlr_surface);
+
+	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
+	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
+	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
 
 	ADD_SIGNAL(MethodInfo("destroy",
 			PropertyInfo(Variant::OBJECT,
@@ -116,4 +148,33 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 		return (WlrXdgSurface *)xdg_surface->data;
 	}
 	return new WlrXdgSurface(xdg_surface);
+}
+
+WlrXdgToplevel::WlrXdgToplevel() {
+	/* Not used */
+}
+
+WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
+	wlr_xdg_toplevel = xdg_toplevel;
+	// TODO: Bind listeners
+}
+
+void WlrXdgToplevel::_bind_methods() {
+	// TODO: bind all that stuff
+}
+
+WlrXdgToplevelState::WlrXdgToplevelState() {
+	/* Not used */
+}
+
+void WlrXdgToplevelState::_bind_methods() {
+	// TODO: bind all that stuff
+}
+
+void WlrXdgPopup::_bind_methods() {
+	// TODO: bind all that stuff
+}
+
+WlrXdgPopup::WlrXdgPopup() {
+	/* Not used */
 }

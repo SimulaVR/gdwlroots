@@ -16,6 +16,9 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WlrSurfaceState>();
 	ClassDB::register_class<WlrXdgShell>();
 	ClassDB::register_class<WlrXdgSurface>();
+	ClassDB::register_class<WlrXdgToplevel>();
+	ClassDB::register_class<WlrXdgToplevelState>();
+	ClassDB::register_class<WlrXdgPopup>();
 }
 
 void unregister_gdwlroots_types() {
