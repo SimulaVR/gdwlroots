@@ -155,11 +155,16 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 	}
 
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
+
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 			GL_RGBA, fmt->gl_type, data);
 	gles2_flush_errors("glTexImage2D");
 
-	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(rid, width, height, fmt);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+
+	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(
+			storage, rid, width, height, fmt);
 	wlr_texture->reference();
 	return wlr_texture->get_wlr_texture();
 }
@@ -247,8 +252,41 @@ bool WlrGLES2Texture::wlr_texture_write_pixels(
 		uint32_t width, uint32_t height,
 		uint32_t src_x, uint32_t src_y, uint32_t dst_x, uint32_t dst_y,
 		const void *data) {
-	wlr_log(WLR_DEBUG, "TODO: write_pixels");
-	return false;
+	WlrGLES2Texture *gles2_texture = WlrGLES2Texture::texture_from_wlr(
+		_texture);
+	gles2_flush_errors(NULL);
+
+	RasterizerStorageGLES2::Texture *texture =
+		gles2_texture->storage->texture_owner.getornull(gles2_texture->texture);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(texture->target, texture->tex_id);
+
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	gles2_flush_errors("glTexParameterf");
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	gles2_flush_errors("glPixelStorei");
+
+	const struct gles2_pixel_format *fmt = gles2_texture->pixel_format;
+	if (fmt->swizzle) {
+		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
+		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+	}
+
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, src_x);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, src_y);
+
+	glTexSubImage2D(GL_TEXTURE_2D, 0, dst_x, dst_y, width, height,
+		fmt->gl_format, fmt->gl_type, data);
+
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+	return true;
 }
 
 void WlrGLES2Texture::wlr_texture_destroy(struct wlr_texture *_texture) {
@@ -273,10 +311,12 @@ Texture *WlrGLES2Renderer::texture_from_wlr(struct wlr_texture *texture) {
 	return WlrGLES2Texture::texture_from_wlr(texture);
 }
 
-WlrGLES2Texture::WlrGLES2Texture(RID p_texture, int width, int height,
+WlrGLES2Texture::WlrGLES2Texture(RasterizerStorageGLES2 *p_storage,
+		RID p_texture, int width, int height,
 		const struct gles2_pixel_format *fmt) {
 	wlr_texture_init(&state.wlr_texture, &texture_impl);
 	state.godot_texture = this;
+	storage = p_storage;
 	texture = p_texture;
 	pixel_format = fmt;
 	w = width;

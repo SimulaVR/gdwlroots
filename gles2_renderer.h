@@ -29,6 +29,7 @@ class WlrGLES2Texture : public Texture {
 	struct texture_state state;
 
 	const struct gles2_pixel_format *pixel_format;
+	RasterizerStorageGLES2 *storage;
 	RID texture;
 	int w, h;
 	uint32_t flags;
@@ -53,7 +54,8 @@ public:
 	uint32_t get_flags() const;
 	void set_flags(uint32_t p_flags);
 
-	WlrGLES2Texture(RID texture, int width, int height,
+	WlrGLES2Texture(RasterizerStorageGLES2 *storage,
+			RID texture, int width, int height,
 			const struct gles2_pixel_format *pixel_format);
 };
 
