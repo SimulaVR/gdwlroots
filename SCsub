@@ -8,6 +8,7 @@ srcs = [
     "register_types.cpp",
     "renderer.cpp",
     "wayland_display.cpp",
+    "wayland_global.cpp",
     "wlr_backend.cpp",
     "wlr_compositor.cpp",
     "wlr_output.cpp",

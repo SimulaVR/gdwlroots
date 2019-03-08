@@ -3,6 +3,7 @@
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
+#include "wayland_global.h"
 #include "wlr_surface.h"
 extern "C" {
 #include <wayland-server.h>
@@ -128,13 +129,13 @@ public:
 
 VARIANT_ENUM_CAST(WlrXdgSurface::XdgSurfaceRole);
 
-class WlrXdgShell : public Node {
+class WlrXdgShell : public WaylandGlobal {
 	GDCLASS(WlrXdgShell, Node);
 
 	struct wlr_xdg_shell *wlr_xdg_shell;
 
-	void ensure_wlr_xdg_shell();
-	WaylandDisplay *get_wayland_display();
+	void ensure_wl_global(WaylandDisplay *display);
+	void destroy_wl_global(WaylandDisplay *display);
 
 	struct wl_listener new_xdg_surface;
 
@@ -142,8 +143,6 @@ class WlrXdgShell : public Node {
 			struct wl_listener *listener, void *data);
 
 protected:
-	void _notification(int p_what);
-
 	static void _bind_methods();
 
 public:

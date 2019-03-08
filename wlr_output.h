@@ -3,25 +3,26 @@
 #include "scene/main/node.h"
 #include "scene/main/viewport.h"
 #include "wayland_display.h"
+#include "wayland_global.h"
 #include "wlr_backend.h"
 extern "C" {
 #include <wlr/types/wlr_output.h>
 }
 
-class WlrOutput : public Node {
+class WlrOutput : public WaylandGlobal {
 	GDCLASS(WlrOutput, Node);
 
 	Viewport *viewport;
 	struct wlr_output *wlr_output;
 
 	void _size_changed();
-	void ensure_wlr_output();
-	WaylandDisplay *get_wayland_display();
+	void ensure_wl_global(WaylandDisplay *display);
+	void destroy_wl_global(WaylandDisplay *display);
 	WlrBackend *get_wlr_backend();
 
 protected:
 	static void _bind_methods();
-	void _notification(int p_what);
+	virtual void _notification(int p_what);
 
 public:
 	WlrOutput();

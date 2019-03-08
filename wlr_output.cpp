@@ -48,16 +48,6 @@ void WlrOutput::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_size_changed"), &WlrOutput::_size_changed);
 }
 
-WaylandDisplay *WlrOutput::get_wayland_display() {
-	Node *parent = get_parent();
-	WaylandDisplay *display = dynamic_cast<WaylandDisplay *>(parent);
-	while (parent && !display) {
-		parent = parent->get_parent();
-		display = dynamic_cast<WaylandDisplay *>(parent);
-	}
-	return display;
-}
-
 WlrBackend *WlrOutput::get_wlr_backend() {
 	Node *parent = get_parent();
 	WlrBackend *backend = dynamic_cast<WlrBackend *>(parent);
@@ -68,11 +58,10 @@ WlrBackend *WlrOutput::get_wlr_backend() {
 	return backend;
 }
 
-void WlrOutput::ensure_wlr_output() {
+void WlrOutput::ensure_wl_global(WaylandDisplay *display) {
 	if (wlr_output) {
 		return;
 	}
-	auto display = get_wayland_display();
 	auto backend = get_wlr_backend();
 	wlr_output = (struct wlr_output *)calloc(sizeof(struct wlr_output), 1);
 	wlr_output_init(wlr_output, backend->get_wlr_backend(), &output_impl,
@@ -85,19 +74,22 @@ void WlrOutput::ensure_wlr_output() {
 	wlr_output_create_global(wlr_output);
 }
 
+void WlrOutput::destroy_wl_global(WaylandDisplay *display) {
+	wlr_output_destroy(wlr_output);
+	wlr_output = NULL;
+}
+
 void WlrOutput::_notification(int p_what) {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE:
 		viewport = get_tree()->get_root();
 		viewport->connect("size_changed", this, "_size_changed");
-		ensure_wlr_output();
 		break;
 	case NOTIFICATION_EXIT_TREE:
-		wlr_output_destroy(wlr_output);
-		wlr_output = NULL;
 		viewport->disconnect("size_changed", this, "_size_changed");
 		break;
 	}
+	WaylandGlobal::_notification(p_what);
 }
 
 WlrOutput::WlrOutput() {

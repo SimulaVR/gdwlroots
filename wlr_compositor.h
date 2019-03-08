@@ -3,20 +3,22 @@
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
+#include "wayland_global.h"
 #include "wlr_backend.h"
 extern "C" {
 #include <wlr/backend.h>
 }
 
-class WlrCompositor : public Node {
+class WlrCompositor : public WaylandGlobal {
 	GDCLASS(WlrCompositor, Node);
 
 	struct wlr_compositor *wlr_compositor;
 
 	WlrRenderer *renderer;
-	void ensure_wlr_compositor();
-	WaylandDisplay *get_wayland_display();
+
 	WlrBackend *get_wlr_backend();
+	void ensure_wl_global(WaylandDisplay *display);
+	void destroy_wl_global(WaylandDisplay *display);
 
 	struct wl_listener new_surface;
 
@@ -24,8 +26,6 @@ class WlrCompositor : public Node {
 		struct wl_listener *listener, void *data);
 
 protected:
-	void _notification(int p_what);
-
 	static void _bind_methods();
 
 public:
