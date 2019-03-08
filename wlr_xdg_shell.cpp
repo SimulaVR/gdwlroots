@@ -139,8 +139,6 @@ WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	xdg_surface->data = this;
 	destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
-	toplevel = NULL;
-	popup = NULL;
 	switch (xdg_surface->role) {
 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
 		toplevel = WlrXdgToplevel::from_wlr_xdg_toplevel(
@@ -224,10 +222,51 @@ String WlrXdgToplevel::get_title() const {
 	return String(wlr_xdg_toplevel->title);
 }
 
+void WlrXdgToplevel::set_size(Vector2 size) {
+	wlr_xdg_toplevel_set_size(wlr_xdg_toplevel->base, size.width, size.height);
+}
+
+void WlrXdgToplevel::set_activated(bool activated) {
+	wlr_xdg_toplevel_set_activated(wlr_xdg_toplevel->base, activated);
+}
+
+void WlrXdgToplevel::set_maximized(bool maximized) {
+	wlr_xdg_toplevel_set_maximized(wlr_xdg_toplevel->base, maximized);
+}
+
+void WlrXdgToplevel::set_fullscreen(bool fullscreen) {
+	wlr_xdg_toplevel_set_fullscreen(wlr_xdg_toplevel->base, fullscreen);
+}
+
+void WlrXdgToplevel::set_resizing(bool resizing) {
+	wlr_xdg_toplevel_set_resizing(wlr_xdg_toplevel->base, resizing);
+}
+
+void WlrXdgToplevel::set_tiled(bool tiled) {
+	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled);
+}
+
+void WlrXdgToplevel::send_close() {
+	wlr_xdg_toplevel_send_close(wlr_xdg_toplevel->base);
+}
+
 void WlrXdgToplevel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXdgToplevel::get_parent);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXdgToplevel::get_title);
 	ClassDB::bind_method(D_METHOD("get_app_id"), &WlrXdgToplevel::get_app_id);
+	ClassDB::bind_method(D_METHOD("set_size", "size"),
+			&WlrXdgToplevel::set_size);
+	ClassDB::bind_method(D_METHOD("set_activated", "activated"),
+			&WlrXdgToplevel::set_activated);
+	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"),
+			&WlrXdgToplevel::set_maximized);
+	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"),
+			&WlrXdgToplevel::set_fullscreen);
+	ClassDB::bind_method(D_METHOD("set_resizing", "resizing"),
+			&WlrXdgToplevel::set_resizing);
+	ClassDB::bind_method(D_METHOD("set_tiled", "tiled"),
+			&WlrXdgToplevel::set_tiled);
+	ClassDB::bind_method(D_METHOD("send_close"), &WlrXdgToplevel::send_close);
 
 	ADD_SIGNAL(MethodInfo("set_app_id",
 			PropertyInfo(Variant::OBJECT,

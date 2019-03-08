@@ -78,6 +78,14 @@ public:
 	WlrXdgToplevel *get_parent() const;
 	String get_title() const;
 	String get_app_id() const;
+
+	void set_size(Vector2 size);
+	void set_activated(bool activated);
+	void set_maximized(bool maximized);
+	void set_fullscreen(bool fullscreen);
+	void set_resizing(bool resizing);
+	void set_tiled(bool tiled);
+	void send_close();
 };
 
 class WlrXdgSurface : public Resource {
@@ -85,8 +93,8 @@ class WlrXdgSurface : public Resource {
 	friend class WlrXdgToplevel;
 	friend class WlrXdgPopup;
 
-	WlrXdgToplevel *toplevel;
-	WlrXdgPopup *popup;
+	WlrXdgToplevel *toplevel = NULL;
+	WlrXdgPopup *popup = NULL;
 
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
