@@ -95,9 +95,12 @@ void WlrXdgSurface::_bind_methods() {
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
 
-	ADD_SIGNAL(MethodInfo("destroy",
-			PropertyInfo(Variant::OBJECT,
-				"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
+			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT,
+			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT,
+			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 }
 
 extern "C" {
@@ -107,6 +110,20 @@ void WlrXdgSurface::handle_destroy(
 	WlrXdgSurface *xdg_surface = wl_container_of(
 			listener, xdg_surface, destroy);
 	xdg_surface->emit_signal("destroy", xdg_surface);
+}
+
+void WlrXdgSurface::handle_map(
+		struct wl_listener *listener, void *data) {
+	WlrXdgSurface *xdg_surface = wl_container_of(
+			listener, xdg_surface, map);
+	xdg_surface->emit_signal("map", xdg_surface);
+}
+
+void WlrXdgSurface::handle_unmap(
+		struct wl_listener *listener, void *data) {
+	WlrXdgSurface *xdg_surface = wl_container_of(
+			listener, xdg_surface, unmap);
+	xdg_surface->emit_signal("unmap", xdg_surface);
 }
 
 }
@@ -120,6 +137,10 @@ WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	xdg_surface->data = this;
 	destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
+	map.notify = handle_map;
+	wl_signal_add(&xdg_surface->events.map, &map);
+	unmap.notify = handle_unmap;
+	wl_signal_add(&xdg_surface->events.unmap, &unmap);
 	switch (xdg_surface->role) {
 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
 		toplevel = WlrXdgToplevel::from_wlr_xdg_toplevel(
