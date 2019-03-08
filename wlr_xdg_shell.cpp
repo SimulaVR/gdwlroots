@@ -150,17 +150,73 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 	return new WlrXdgSurface(xdg_surface);
 }
 
+extern "C" {
+
+void WlrXdgToplevel::handle_set_parent(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, set_parent);
+	xdg_toplevel->emit_signal("set_parent", xdg_toplevel);
+}
+
+void WlrXdgToplevel::handle_set_title(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, set_title);
+	xdg_toplevel->emit_signal("set_title", xdg_toplevel);
+}
+
+void WlrXdgToplevel::handle_set_app_id(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, set_app_id);
+	xdg_toplevel->emit_signal("set_app_id", xdg_toplevel);
+}
+
+}
+
 WlrXdgToplevel::WlrXdgToplevel() {
 	/* Not used */
 }
 
 WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 	wlr_xdg_toplevel = xdg_toplevel;
-	// TODO: Bind listeners
+	// TODO: Bind more listeners
+	set_parent.notify = handle_set_parent;
+	wl_signal_add(&wlr_xdg_toplevel->events.set_parent, &set_parent);
+	set_title.notify = handle_set_title;
+	wl_signal_add(&wlr_xdg_toplevel->events.set_title, &set_title);
+	set_app_id.notify = handle_set_app_id;
+	wl_signal_add(&wlr_xdg_toplevel->events.set_app_id, &set_app_id);
+}
+
+WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
+	// TODO
+	return NULL;
+}
+
+String WlrXdgToplevel::get_app_id() const {
+	return String(wlr_xdg_toplevel->app_id);
+}
+
+String WlrXdgToplevel::get_title() const {
+	return String(wlr_xdg_toplevel->title);
 }
 
 void WlrXdgToplevel::_bind_methods() {
-	// TODO: bind all that stuff
+	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXdgToplevel::get_parent);
+	ClassDB::bind_method(D_METHOD("get_title"), &WlrXdgToplevel::get_title);
+	ClassDB::bind_method(D_METHOD("get_app_id"), &WlrXdgToplevel::get_app_id);
+
+	ADD_SIGNAL(MethodInfo("set_app_id",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("set_title",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("set_parent",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
 }
 
 WlrXdgToplevelState::WlrXdgToplevelState() {
