@@ -82,12 +82,12 @@ WlrXdgSurface::XdgSurfaceRole WlrXdgSurface::get_role() const {
 
 WlrXdgToplevel *WlrXdgSurface::get_xdg_toplevel() const {
 	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL);
-	return new WlrXdgToplevel(wlr_xdg_surface->toplevel);
+	return toplevel;
 }
 
 WlrXdgPopup *WlrXdgSurface::get_xdg_popup() const {
 	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_POPUP);
-	return NULL;
+	return popup;
 }
 
 Rect2 WlrXdgSurface::get_geometry() {
@@ -139,8 +139,21 @@ WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	xdg_surface->data = this;
 	destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
+	toplevel = NULL;
+	popup = NULL;
+	switch (xdg_surface->role) {
+	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
+		toplevel = WlrXdgToplevel::from_wlr_xdg_toplevel(
+				wlr_xdg_surface->toplevel);
+		break;
+	case WLR_XDG_SURFACE_ROLE_POPUP:
+		popup = WlrXdgPopup::from_wlr_xdg_popup(wlr_xdg_surface->popup);
+		break;
+	case WLR_XDG_SURFACE_ROLE_NONE:
+		assert(0);
+		break;
+	}
 }
-
 
 WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 		struct wlr_xdg_surface *xdg_surface) {
@@ -190,9 +203,17 @@ WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 	wl_signal_add(&wlr_xdg_toplevel->events.set_app_id, &set_app_id);
 }
 
+WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
+		struct wlr_xdg_toplevel *xdg_toplevel) {
+	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_toplevel->base->data;
+	if (surface->toplevel) {
+		return surface->toplevel;
+	}
+	return new WlrXdgToplevel(xdg_toplevel);
+}
+
 WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
-	// TODO
-	return NULL;
+	return from_wlr_xdg_toplevel(wlr_xdg_toplevel->parent->toplevel);
 }
 
 String WlrXdgToplevel::get_app_id() const {
@@ -227,10 +248,23 @@ void WlrXdgToplevelState::_bind_methods() {
 	// TODO: bind all that stuff
 }
 
-void WlrXdgPopup::_bind_methods() {
-	// TODO: bind all that stuff
-}
-
 WlrXdgPopup::WlrXdgPopup() {
 	/* Not used */
+}
+
+WlrXdgPopup::WlrXdgPopup(struct wlr_xdg_popup *xdg_popup) {
+	wlr_xdg_popup = xdg_popup;
+	// TOOD: Bind listeners
+}
+
+WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
+	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_popup->base->data;
+	if (surface->popup) {
+		return surface->popup;
+	}
+	return new WlrXdgPopup(xdg_popup);
+}
+
+void WlrXdgPopup::_bind_methods() {
+	// TODO: bind classdb
 }

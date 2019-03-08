@@ -12,11 +12,16 @@ extern "C" {
 class WlrXdgPopup : public Object {
 	GDCLASS(WlrXdgPopup, Object);
 
+	struct wlr_xdg_popup *wlr_xdg_popup;
+
 protected:
 	static void _bind_methods();
 
-	/* Necessary for Object */
-	WlrXdgPopup();
+	WlrXdgPopup(); /* Necessary for Object */
+	WlrXdgPopup(struct wlr_xdg_popup *xdg_popup);
+
+public:
+	static WlrXdgPopup *from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup);
 };
 
 class WlrXdgToplevelState : public Object {
@@ -60,21 +65,28 @@ class WlrXdgToplevel : public Object {
 protected:
 	static void _bind_methods();
 
-	/* Necessary for Object */
-	WlrXdgToplevel();
+	WlrXdgToplevel(); /* Necessary for Object */
+	WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel);
 
 public:
-	WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel);
+	static WlrXdgToplevel *from_wlr_xdg_toplevel(
+			struct wlr_xdg_toplevel *xdg_toplevel);
 
 	WlrXdgToplevelState *get_client_pending_state() const;
 	WlrXdgToplevelState *get_server_pending_state() const;
 	WlrXdgToplevelState *get_current_state() const;
+	WlrXdgToplevel *get_parent() const;
 	String get_title() const;
 	String get_app_id() const;
 };
 
 class WlrXdgSurface : public Resource {
 	GDCLASS(WlrXdgSurface, Resource);
+	friend class WlrXdgToplevel;
+	friend class WlrXdgPopup;
+
+	WlrXdgToplevel *toplevel;
+	WlrXdgPopup *popup;
 
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
