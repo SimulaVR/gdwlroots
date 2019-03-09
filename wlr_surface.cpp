@@ -107,10 +107,42 @@ WlrSurface::WlrSurface(struct wlr_surface *surface) {
 }
 
 WlrSurface *WlrSurface::from_wlr_surface(struct wlr_surface *surface) {
+	if (!surface) {
+		return NULL;
+	}
 	if (surface->data) {
 		auto s = (WlrSurface *)surface->data;
-		wlr_log(WLR_DEBUG, "Found surface %p for %p", s, surface);
 		return s;
 	}
 	return new WlrSurface(surface);
+}
+
+WlrSurface *WlrSurfaceAtResult::get_surface() {
+	return surface;
+}
+
+double WlrSurfaceAtResult::get_sub_x() {
+	return sub_x;
+}
+
+double WlrSurfaceAtResult::get_sub_y() {
+	return sub_y;
+}
+
+void WlrSurfaceAtResult::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_sub_x"), &WlrSurfaceAtResult::get_sub_x);
+	ClassDB::bind_method(D_METHOD("get_sub_y"), &WlrSurfaceAtResult::get_sub_y);
+	ClassDB::bind_method(D_METHOD("get_surface"),
+			&WlrSurfaceAtResult::get_surface);
+}
+
+WlrSurfaceAtResult::WlrSurfaceAtResult() {
+	/* Not used */
+}
+
+WlrSurfaceAtResult::WlrSurfaceAtResult(WlrSurface *surface,
+		double sub_x, double sub_y) {
+	this->surface = surface;
+	this->sub_x = sub_x;
+	this->sub_y = sub_y;
 }

@@ -106,6 +106,14 @@ void WlrXdgSurface::for_each_surface(Variant func) {
 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
 }
 
+WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
+	double sub_x, sub_y;
+	struct wlr_surface *result = wlr_xdg_surface_surface_at(
+			wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
+	return new WlrSurfaceAtResult(
+			WlrSurface::from_wlr_surface(result), sub_x, sub_y);
+}
+
 void WlrXdgSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
@@ -118,6 +126,8 @@ void WlrXdgSurface::_bind_methods() {
 			&WlrXdgSurface::get_wlr_surface);
 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
 			&WlrXdgSurface::for_each_surface);
+	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
+			&WlrXdgSurface::surface_at);
 
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);

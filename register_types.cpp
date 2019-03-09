@@ -17,6 +17,7 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WlrOutput>();
 	ClassDB::register_class<WlrSeat>();
 	ClassDB::register_class<WlrSurface>();
+	ClassDB::register_class<WlrSurfaceAtResult>();
 	ClassDB::register_class<WlrSurfaceState>();
 	ClassDB::register_class<WlrXdgShell>();
 	ClassDB::register_class<WlrXdgSurface>();

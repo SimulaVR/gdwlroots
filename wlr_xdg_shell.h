@@ -128,6 +128,7 @@ public:
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
 	void for_each_surface(Variant func);
+	WlrSurfaceAtResult *surface_at(double sx, double sy);
 
 	static WlrXdgSurface *from_wlr_xdg_surface(
 			struct wlr_xdg_surface *xdg_surface);

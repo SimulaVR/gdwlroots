@@ -52,4 +52,24 @@ public:
 	void send_frame_done();
 };
 
+class WlrSurfaceAtResult : public Reference {
+	GDCLASS(WlrSurfaceAtResult, Reference);
+
+	WlrSurface *surface;
+	double sub_x, sub_y;
+
+protected:
+	static void _bind_methods();
+
+	/* Necessary for Object */
+	WlrSurfaceAtResult();
+
+public:
+	WlrSurface *get_surface();
+	double get_sub_x();
+	double get_sub_y();
+
+	WlrSurfaceAtResult(WlrSurface *surface, double sub_x, double sub_y);
+};
+
 #endif

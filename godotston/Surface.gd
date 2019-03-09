@@ -98,8 +98,12 @@ func input_event_passthrough(event):
 	var notify_frame = false
 	if event is InputEventMouseMotion:
 		var position = get_surface_coords(to_local(event.position))
-		seat.pointer_notify_motion(position.x, position.y)
-		notify_frame = true
+		var surface = xdg_surface.surface_at(position.x, position.y)
+		if surface != null:
+			seat.pointer_notify_enter(surface.get_surface(),
+					surface.get_sub_x(), surface.get_sub_y())
+			seat.pointer_notify_motion(surface.get_sub_x(), surface.get_sub_y())
+			notify_frame = true
 	if event is InputEventMouseButton:
 		seat.pointer_notify_button(event.button_index, event.pressed)
 		notify_frame = true
@@ -124,8 +128,9 @@ func _integrate_forces(state):
 	state.set_linear_velocity(lv)
 
 func _on_RigidBody2D_mouse_entered():
-	var position = get_surface_coords(to_local(get_viewport().get_mouse_position()))
-	# TODO: Find subsurface
-	var surface = xdg_surface.get_wlr_surface()
+	var position = get_surface_coords(
+			to_local(get_viewport().get_mouse_position()))
+	var surface = xdg_surface.surface_at(position.x, position.y)
 	if surface != null:
-		seat.pointer_notify_enter(surface, position.x, position.y)
+		seat.pointer_notify_enter(surface.get_surface(),
+				surface.get_sub_x(), surface.get_sub_y())
