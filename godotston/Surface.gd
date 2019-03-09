@@ -115,7 +115,7 @@ func _integrate_forces(state):
 	var lv = state.get_linear_velocity()
 	if input_mode == INTERACTIVE_MOVE:
 		lv = (get_viewport().get_mouse_position() -
-			get_global_transform().origin - interactive_offset) * 16
+			to_global(interactive_offset)) * 16
 	state.set_linear_velocity(lv)
 
 func _on_RigidBody2D_mouse_entered():
