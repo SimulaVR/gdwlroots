@@ -106,7 +106,7 @@ func _on_RigidBody2D_input_event(viewport, event, shape_idx):
 		INTERACTIVE_PASSTHROUGH:
 			input_event_passthrough(event)
 
-func _input_event(viewport, event, shape_idx):
+func _input(event):
 	if input_mode == INTERACTIVE_MOVE or input_mode == INTERACTIVE_RESIZE:
 		if event is InputEventMouseButton and not event.pressed:
 			input_mode = INTERACTIVE_PASSTHROUGH
