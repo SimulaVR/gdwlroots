@@ -4,7 +4,6 @@ export var xdg_surface: WlrXdgSurface = null setget _xdg_surface_set
 var toplevel: WlrXdgToplevel
 var surface: WlrSurface
 var geometry: Rect2
-var process_input: bool
 var seat: WlrSeat
 
 enum {
@@ -12,6 +11,9 @@ enum {
 	INTERACTIVE_MOVE,
 	INTERACTIVE_RESIZE,
 }
+
+var input_mode = INTERACTIVE_PASSTHROUGH
+var interactive_offset: Vector2
 
 signal map(surface)
 signal unmap(surface)
@@ -24,7 +26,6 @@ func set_seat(_seat):
 
 func focus():
 	if toplevel != null:
-		process_input = true
 		toplevel.set_activated(true)
 
 func _handle_destroy(xdg_surface):
@@ -33,11 +34,19 @@ func _handle_destroy(xdg_surface):
 	
 func _handle_map(xdg_surface):
 	set_process(true)
+	set_process_input(true)
 	emit_signal("map", self)
 
 func _handle_unmap(xdg_surface):
 	set_process(false)
+	set_process_input(false)
 	emit_signal("unmap", self)
+
+func _handle_request_move(xdg_toplevel):
+	# TODO: Validate serial
+	var position = to_local(get_viewport().get_mouse_position())
+	interactive_offset = position
+	input_mode = INTERACTIVE_MOVE
 
 func _xdg_surface_set(val):
 	xdg_surface = val
@@ -47,6 +56,7 @@ func _xdg_surface_set(val):
 	xdg_surface.connect("unmap", self, "_handle_unmap")
 	if xdg_surface.get_role() == WlrXdgSurface.XDG_SURFACE_ROLE_TOPLEVEL:
 		toplevel = xdg_surface.get_xdg_toplevel()
+		toplevel.connect("request_move", self, "_handle_request_move")
 
 func _draw():
 	if surface == null:
@@ -78,7 +88,7 @@ func _process(delta):
 func get_surface_coords(position):
 	return position + geometry.size / Vector2(2, 2) + geometry.position
 
-func _on_RigidBody2D_input_event(viewport, event, shape_idx):
+func input_event_passthrough(event):
 	var notify_frame = false
 	if event is InputEventMouseMotion:
 		var position = get_surface_coords(to_local(event.position))
@@ -89,6 +99,23 @@ func _on_RigidBody2D_input_event(viewport, event, shape_idx):
 		notify_frame = true
 	if notify_frame:
 		seat.pointer_notify_frame()
+
+func _on_RigidBody2D_input_event(viewport, event, shape_idx):
+	match input_mode:
+		INTERACTIVE_PASSTHROUGH:
+			input_event_passthrough(event)
+
+func _input_event(viewport, event, shape_idx):
+	if input_mode == INTERACTIVE_MOVE or input_mode == INTERACTIVE_RESIZE:
+		if event is InputEventMouseButton and not event.pressed:
+			input_mode = INTERACTIVE_PASSTHROUGH
+
+func _integrate_forces(state):
+	var lv = state.get_linear_velocity()
+	if input_mode == INTERACTIVE_MOVE:
+		lv = (get_viewport().get_mouse_position() -
+			get_global_transform().origin - interactive_offset) * 16
+	state.set_linear_velocity(lv)
 
 func _on_RigidBody2D_mouse_entered():
 	var position = get_surface_coords(to_local(get_viewport().get_mouse_position()))

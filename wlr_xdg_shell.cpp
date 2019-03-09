@@ -186,6 +186,14 @@ void WlrXdgToplevel::handle_set_app_id(
 	xdg_toplevel->emit_signal("set_app_id", xdg_toplevel);
 }
 
+void WlrXdgToplevel::handle_request_move(
+		struct wl_listener *listener, void *data) {
+	// TODO: fish through the serial and seat client
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_move);
+	xdg_toplevel->emit_signal("request_move", xdg_toplevel);
+}
+
 }
 
 WlrXdgToplevel::WlrXdgToplevel() {
@@ -201,6 +209,8 @@ WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 	wl_signal_add(&wlr_xdg_toplevel->events.set_title, &set_title);
 	set_app_id.notify = handle_set_app_id;
 	wl_signal_add(&wlr_xdg_toplevel->events.set_app_id, &set_app_id);
+	request_move.notify = handle_request_move;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_move, &request_move);
 }
 
 WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
@@ -277,6 +287,9 @@ void WlrXdgToplevel::_bind_methods() {
 			PropertyInfo(Variant::OBJECT,
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
 	ADD_SIGNAL(MethodInfo("set_parent",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("request_move",
 			PropertyInfo(Variant::OBJECT,
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
 }

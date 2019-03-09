@@ -40,14 +40,14 @@ class WlrXdgToplevel : public Object {
 
 	struct wlr_xdg_toplevel *wlr_xdg_toplevel;
 
-	static void handle_set_request_maximize(
+	static void handle_request_maximize(
 			struct wl_listener *listener, void *data);
-	static void handle_set_request_fullscreen(
+	static void handle_request_fullscreen(
 			struct wl_listener *listener, void *data);
-	static void handle_set_minimize(struct wl_listener *listener, void *data);
-	static void handle_set_move(struct wl_listener *listener, void *data);
-	static void handle_set_resize(struct wl_listener *listener, void *data);
-	static void handle_set_show_window_menu(
+	static void handle_request_minimize(struct wl_listener *listener, void *data);
+	static void handle_request_move(struct wl_listener *listener, void *data);
+	static void handle_request_resize(struct wl_listener *listener, void *data);
+	static void handle_request_show_window_menu(
 			struct wl_listener *listener, void *data);
 	static void handle_set_parent(struct wl_listener *listener, void *data);
 	static void handle_set_title(struct wl_listener *listener, void *data);
