@@ -3,6 +3,7 @@
 #include "wayland_display.h"
 #include "wlr_backend.h"
 #include "wlr_compositor.h"
+#include "wlr_data_device_manager.h"
 #include "wlr_output.h"
 #include "wlr_seat.h"
 #include "wlr_surface.h"
@@ -12,6 +13,7 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WaylandDisplay>();
 	ClassDB::register_class<WlrBackend>();
 	ClassDB::register_class<WlrCompositor>();
+	ClassDB::register_class<WlrDataDeviceManager>();
 	ClassDB::register_class<WlrOutput>();
 	ClassDB::register_class<WlrSeat>();
 	ClassDB::register_class<WlrSurface>();

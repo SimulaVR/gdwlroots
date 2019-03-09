@@ -19,8 +19,6 @@ void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 	if (wlr_seat) {
 		return;
 	}
-	// TODO: add WlrDataDevice as a user module
-	wlr_data_device_manager_create(display->get_wayland_display());
 	// TODO: let godot user customize seat names
 	wlr_seat = wlr_seat_create(display->get_wayland_display(), "seat0");
 	set_capabilities(capabilities);

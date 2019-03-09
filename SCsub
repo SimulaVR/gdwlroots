@@ -11,6 +11,7 @@ srcs = [
     "wayland_global.cpp",
     "wlr_backend.cpp",
     "wlr_compositor.cpp",
+    "wlr_data_device_manager.cpp",
     "wlr_output.cpp",
     "wlr_seat.cpp",
     "wlr_surface.cpp",
