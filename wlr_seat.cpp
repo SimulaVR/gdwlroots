@@ -148,6 +148,10 @@ void WlrSeat::set_capabilities(uint32_t caps) {
 	}
 }
 
+bool WlrSeat::validate_grab_serial(uint32_t serial) {
+	return wlr_seat_validate_grab_serial(wlr_seat, serial);
+}
+
 void WlrSeat::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_capabilities", "capabilities"),
 			&WlrSeat::set_capabilities);
@@ -164,6 +168,9 @@ void WlrSeat::_bind_methods() {
 			&WlrSeat::pointer_notify_button);
 	ClassDB::bind_method(D_METHOD("pointer_notify_frame"),
 			&WlrSeat::pointer_notify_frame);
+
+	ClassDB::bind_method(D_METHOD("validate_grab_serial", "serial"),
+			&WlrSeat::validate_grab_serial);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "capabilities", PROPERTY_HINT_FLAGS,
 				"Pointer, Keyboard, Touch"),

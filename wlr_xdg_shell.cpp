@@ -188,10 +188,11 @@ void WlrXdgToplevel::handle_set_app_id(
 
 void WlrXdgToplevel::handle_request_move(
 		struct wl_listener *listener, void *data) {
-	// TODO: fish through the serial and seat client
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
 			listener, xdg_toplevel, request_move);
-	xdg_toplevel->emit_signal("request_move", xdg_toplevel);
+	struct wlr_xdg_toplevel_move_event *event =
+		(struct wlr_xdg_toplevel_move_event *)data;
+	xdg_toplevel->emit_signal("request_move", xdg_toplevel, event->serial);
 }
 
 }
@@ -291,7 +292,8 @@ void WlrXdgToplevel::_bind_methods() {
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
 	ADD_SIGNAL(MethodInfo("request_move",
 			PropertyInfo(Variant::OBJECT,
-				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
+			PropertyInfo(Variant::INT, "serial")));
 }
 
 WlrXdgToplevelState::WlrXdgToplevelState() {

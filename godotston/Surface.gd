@@ -42,8 +42,9 @@ func _handle_unmap(xdg_surface):
 	set_process_input(false)
 	emit_signal("unmap", self)
 
-func _handle_request_move(xdg_toplevel):
-	# TODO: Validate serial
+func _handle_request_move(xdg_toplevel, serial):
+	if not seat.validate_grab_serial(serial):
+		return
 	var position = to_local(get_viewport().get_mouse_position())
 	interactive_offset = position
 	input_mode = INTERACTIVE_MOVE

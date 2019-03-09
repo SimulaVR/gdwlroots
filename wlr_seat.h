@@ -44,6 +44,8 @@ public:
 	void pointer_notify_frame();
 	void pointer_clear_focus();
 
+	bool validate_grab_serial(uint32_t serial);
+
 	WlrSeat();
 	~WlrSeat();
 };
