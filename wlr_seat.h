@@ -21,6 +21,10 @@ class WlrSeat : public WaylandGlobal {
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
 
+	uint32_t _pointer_notify_button(
+			uint32_t time, ButtonList godot_button, bool pressed);
+	uint32_t _pointer_notify_axis(uint32_t time, ButtonList godot_button);
+
 protected:
 	static void _bind_methods();
 

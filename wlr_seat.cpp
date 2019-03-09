@@ -1,9 +1,11 @@
+#include <assert.h>
 #include "core/os/input_event.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wlr_seat.h"
 #include "wlr_surface.h"
 extern "C" {
+#include <linux/input-event-codes.h>
 #include <wayland-server.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_seat.h>
@@ -54,9 +56,73 @@ void WlrSeat::pointer_notify_motion(double sx, double sy) {
 	wlr_seat_pointer_notify_motion(wlr_seat, timespec_to_msec(&now), sx, sy);
 }
 
-uint32_t WlrSeat::pointer_notify_button(Variant button, bool pressed) {
-	// TODO: translate godot button events into wlroots button events
+uint32_t WlrSeat::_pointer_notify_button(uint32_t time,
+		ButtonList godot_button, bool pressed) {
+	uint32_t wlr_button;
+	switch (godot_button) {
+	case BUTTON_LEFT:
+		wlr_button = BTN_LEFT;
+		break;
+	case BUTTON_RIGHT:
+		wlr_button = BTN_RIGHT;
+		break;
+	case BUTTON_MIDDLE:
+		wlr_button = BTN_MIDDLE;
+		break;
+	default:
+		assert(0);
+	}
+	return wlr_seat_pointer_notify_button(wlr_seat, time, wlr_button,
+			pressed ? WLR_BUTTON_PRESSED : WLR_BUTTON_RELEASED);
+}
+
+uint32_t WlrSeat::_pointer_notify_axis(uint32_t time, ButtonList godot_button) {
+	enum wlr_axis_orientation axis;
+	int32_t value_discrete;
+	switch (godot_button) {
+	case BUTTON_WHEEL_UP:
+		axis = WLR_AXIS_ORIENTATION_VERTICAL;
+		value_discrete = -1;
+		break;
+	case BUTTON_WHEEL_DOWN:
+		axis = WLR_AXIS_ORIENTATION_VERTICAL;
+		value_discrete = 1;
+		break;
+	case BUTTON_WHEEL_LEFT:
+		axis = WLR_AXIS_ORIENTATION_HORIZONTAL;
+		value_discrete = 1;
+		break;
+	case BUTTON_WHEEL_RIGHT:
+		axis = WLR_AXIS_ORIENTATION_HORIZONTAL;
+		value_discrete = -1;
+		break;
+	default:
+		assert(0);
+	}
+	wlr_seat_pointer_notify_axis(wlr_seat, time, axis,
+			value_discrete * 5, value_discrete, WLR_AXIS_SOURCE_WHEEL);
 	return 0;
+}
+
+uint32_t WlrSeat::pointer_notify_button(Variant button, bool pressed) {
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	auto godot_button = (ButtonList)(uint32_t)button;
+	switch (godot_button) {
+	case BUTTON_LEFT:
+	case BUTTON_RIGHT:
+	case BUTTON_MIDDLE:
+		return _pointer_notify_button(timespec_to_msec(&now),
+				godot_button, pressed);
+	case BUTTON_WHEEL_UP:
+	case BUTTON_WHEEL_DOWN:
+	case BUTTON_WHEEL_LEFT:
+	case BUTTON_WHEEL_RIGHT:
+		return _pointer_notify_axis(
+				timespec_to_msec(&now), godot_button);
+	default:
+		return 0;
+	}
 }
 
 void WlrSeat::pointer_notify_frame() {
