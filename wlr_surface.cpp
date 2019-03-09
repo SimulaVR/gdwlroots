@@ -57,18 +57,15 @@ int WlrSurface::get_sy() {
 }
 
 WlrSurfaceState *WlrSurface::get_current_state() const {
-	static WlrSurfaceState state = WlrSurfaceState(&wlr_surface->current);
-	return &state;
+	return new WlrSurfaceState(&wlr_surface->current);
 }
 
 WlrSurfaceState *WlrSurface::get_pending_state() const {
-	static WlrSurfaceState state = WlrSurfaceState(&wlr_surface->pending);
-	return &state;
+	return new WlrSurfaceState(&wlr_surface->pending);
 }
 
 WlrSurfaceState *WlrSurface::get_previous_state() const {
-	static WlrSurfaceState state = WlrSurfaceState(&wlr_surface->previous);
-	return &state;
+	return new WlrSurfaceState(&wlr_surface->previous);
 }
 
 Ref<Texture> WlrSurface::get_texture() const {

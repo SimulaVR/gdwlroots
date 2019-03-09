@@ -7,6 +7,12 @@ var geometry: Rect2
 var process_input: bool
 var seat: WlrSeat
 
+enum {
+	INTERACTIVE_PASSTHROUGH,
+	INTERACTIVE_MOVE,
+	INTERACTIVE_RESIZE,
+}
+
 signal map(surface)
 signal unmap(surface)
 
@@ -50,24 +56,38 @@ func _draw():
 		return
 	var state = surface.get_current_state()
 	# TODO: Draw all subsurfaces/popups/etc
-	draw_texture(texture, Vector2(-state.get_width() / 2, -state.get_height() / 2))
+	var position = Vector2(-state.get_buffer_width() / 2, -state.get_buffer_height() / 2)
+	draw_texture(texture, position)
 	surface.send_frame_done()
 
 func _process(delta):
 	var collisionShape = get_node("CollisionShape2D")
 	var state = surface.get_current_state()
 	geometry = xdg_surface.get_geometry()
-	if geometry.size.x != 0 and geometry.size.y != 0:
-		collisionShape.shape.set_extents(geometry.size / Vector2(2, 2))
+	var extents = collisionShape.shape.get_extents()
+	var desiredExtents = geometry.size / Vector2(2, 2)
+	if geometry.size.x == 0 or geometry.size.y == 0:
+		desiredExtents = Vector2(state.get_width() / 2, state.get_height() / 2)
+	if desiredExtents.x != 0 and desiredExtents.y != 0 \
+			and extents != desiredExtents:
+		collisionShape.shape = RectangleShape2D.new()
+		collisionShape.shape.set_extents(desiredExtents)
+		print("Set surface extents to ", desiredExtents)
 	update()
 
 func get_surface_coords(position):
 	return position + geometry.size / Vector2(2, 2) + geometry.position
 
 func _on_RigidBody2D_input_event(viewport, event, shape_idx):
+	var notify_frame = false
 	if event is InputEventMouseMotion:
 		var position = get_surface_coords(to_local(event.position))
 		seat.pointer_notify_motion(position.x, position.y)
+		notify_frame = true
+	if event is InputEventMouseButton:
+		seat.pointer_notify_button(event.button_index, event.pressed)
+		notify_frame = true
+	if notify_frame:
 		seat.pointer_notify_frame()
 
 func _on_RigidBody2D_mouse_entered():

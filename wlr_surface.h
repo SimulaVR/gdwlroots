@@ -6,8 +6,8 @@ extern "C" {
 #include <wlr/types/wlr_surface.h>
 }
 
-class WlrSurfaceState : public Object {
-	GDCLASS(WlrSurfaceState, Object);
+class WlrSurfaceState : public Resource {
+	GDCLASS(WlrSurfaceState, Resource);
 
 	const struct wlr_surface_state *state;
 

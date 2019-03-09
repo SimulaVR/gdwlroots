@@ -20,6 +20,7 @@ script = ExtResource( 1 )
 socket_name = "godot-0"
 
 [node name="WlrBackend" type="WlrBackend" parent="WaylandDisplay"]
+editor/display_folded = true
 
 [node name="WlrOutput" type="WlrOutput" parent="WaylandDisplay/WlrBackend"]
 
@@ -29,6 +30,8 @@ socket_name = "godot-0"
 
 [node name="WlrSeat" type="WlrSeat" parent="WaylandDisplay"]
 capabilities = 3
+
+[node name="WlrDataDeviceManager" type="WlrDataDeviceManager" parent="WaylandDisplay"]
 
 [node name="ViewportBounds" type="StaticBody2D" parent="."]
 physics_material_override = SubResource( 1 )
