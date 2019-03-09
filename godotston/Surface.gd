@@ -2,7 +2,6 @@ extends RigidBody2D
 
 export var xdg_surface: WlrXdgSurface = null setget _xdg_surface_set
 var toplevel: WlrXdgToplevel
-var surface: WlrSurface
 var geometry: Rect2
 var seat: WlrSeat
 
@@ -51,28 +50,34 @@ func _handle_request_move(xdg_toplevel, serial):
 
 func _xdg_surface_set(val):
 	xdg_surface = val
-	surface = xdg_surface.get_wlr_surface()
 	xdg_surface.connect("destroy", self, "_handle_destroy")
 	xdg_surface.connect("map", self, "_handle_map")
 	xdg_surface.connect("unmap", self, "_handle_unmap")
-	if xdg_surface.get_role() == WlrXdgSurface.XDG_SURFACE_ROLE_TOPLEVEL:
-		toplevel = xdg_surface.get_xdg_toplevel()
-		toplevel.connect("request_move", self, "_handle_request_move")
+	toplevel = xdg_surface.get_xdg_toplevel()
+	toplevel.connect("request_move", self, "_handle_request_move")
 
-func _draw():
-	if surface == null:
-		return
+func _draw_surface(surface, sx, sy):
 	var texture = surface.get_texture()
 	if texture == null:
 		return
-	var state = surface.get_current_state()
-	# TODO: Draw all subsurfaces/popups/etc
-	var position = Vector2(-state.get_buffer_width() / 2, -state.get_buffer_height() / 2)
+	var state = xdg_surface.get_wlr_surface().get_current_state()
+	var position = Vector2(
+		(-state.get_buffer_width() / 2) + sx,
+		(-state.get_buffer_height() / 2) + sy)
 	draw_texture(texture, position)
 	surface.send_frame_done()
 
+func _draw():
+	if xdg_surface != null:
+		var fn = funcref(self, "_draw_surface")
+		xdg_surface.for_each_surface(fn)
+
 func _process(delta):
 	var collisionShape = get_node("CollisionShape2D")
+	var surface = xdg_surface.get_wlr_surface()
+	if surface == null:
+		update()
+		return
 	var state = surface.get_current_state()
 	geometry = xdg_surface.get_geometry()
 	var extents = collisionShape.shape.get_extents()
@@ -120,4 +125,7 @@ func _integrate_forces(state):
 
 func _on_RigidBody2D_mouse_entered():
 	var position = get_surface_coords(to_local(get_viewport().get_mouse_position()))
-	seat.pointer_notify_enter(surface, position.x, position.y)
+	# TODO: Find subsurface
+	var surface = xdg_surface.get_wlr_surface()
+	if surface != null:
+		seat.pointer_notify_enter(surface, position.x, position.y)

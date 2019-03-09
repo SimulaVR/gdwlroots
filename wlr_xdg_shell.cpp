@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "core/func_ref.h"
 #include "core/object.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
@@ -80,6 +81,31 @@ WlrSurface *WlrXdgSurface::get_wlr_surface() const {
 	return WlrSurface::from_wlr_surface(wlr_xdg_surface->surface);
 }
 
+extern "C" {
+
+static void for_each_surface_iter(struct wlr_surface *surface,
+		int sx, int sy, void *data) {
+	FuncRef *func = (FuncRef *)data;
+	const Variant *args[] = {
+		new Variant(WlrSurface::from_wlr_surface(surface)),
+		new Variant(sx),
+		new Variant(sy),
+	};
+	Variant::CallError error;
+	func->call_func((const Variant **)&args[0], 3, error);
+	if (error.error != Variant::CallError::Error::CALL_OK) {
+		printf("call error %d\n", error.error);
+	}
+}
+
+}
+
+void WlrXdgSurface::for_each_surface(Variant func) {
+	auto fn = (Ref<FuncRef>)func;
+	wlr_xdg_surface_for_each_surface(
+			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
+}
+
 void WlrXdgSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
@@ -90,6 +116,8 @@ void WlrXdgSurface::_bind_methods() {
 			&WlrXdgSurface::get_geometry);
 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
 			&WlrXdgSurface::get_wlr_surface);
+	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
+			&WlrXdgSurface::for_each_surface);
 
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);

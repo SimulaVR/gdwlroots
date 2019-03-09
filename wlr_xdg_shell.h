@@ -1,5 +1,6 @@
 #ifndef GDWLR_WLR_XDG_SHELL_H
 #define GDWLR_WLR_XDG_SHELL_H
+#include "core/func_ref.h"
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
@@ -126,6 +127,7 @@ public:
 
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
+	void for_each_surface(Variant func);
 
 	static WlrXdgSurface *from_wlr_xdg_surface(
 			struct wlr_xdg_surface *xdg_surface);

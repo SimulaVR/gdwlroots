@@ -16,6 +16,8 @@ func handle_unmap_surface(surface):
 	remove_child(surface)
 
 func _on_WlrXdgShell_new_surface(xdg_surface):
+	if xdg_surface.get_role() != WlrXdgSurface.XDG_SURFACE_ROLE_TOPLEVEL:
+		return
 	var surface = Surface.instance()
 	surface.xdg_surface = xdg_surface
 	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
