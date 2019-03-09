@@ -165,6 +165,60 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 
 extern "C" {
 
+void WlrXdgToplevel::handle_request_maximize(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_maximize);
+	xdg_toplevel->emit_signal("request_maximize", xdg_toplevel);
+}
+
+void WlrXdgToplevel::handle_request_fullscreen(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_fullscreen);
+	struct wlr_xdg_toplevel_set_fullscreen_event *event =
+		(struct wlr_xdg_toplevel_set_fullscreen_event *)data;
+	// TODO: Implement WlrOutput::from_wlr_output
+	xdg_toplevel->emit_signal("request_fullscreen",
+			xdg_toplevel, event->fullscreen);
+}
+
+void WlrXdgToplevel::handle_request_minimize(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_minimize);
+	xdg_toplevel->emit_signal("request_minimize", xdg_toplevel);
+}
+
+void WlrXdgToplevel::handle_request_move(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_move);
+	struct wlr_xdg_toplevel_move_event *event =
+		(struct wlr_xdg_toplevel_move_event *)data;
+	xdg_toplevel->emit_signal("request_move", xdg_toplevel, event->serial);
+}
+
+void WlrXdgToplevel::handle_request_resize(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_resize);
+	struct wlr_xdg_toplevel_resize_event *event =
+		(struct wlr_xdg_toplevel_resize_event *)data;
+	xdg_toplevel->emit_signal("request_resize", xdg_toplevel,
+			event->serial, event->edges);
+}
+
+void WlrXdgToplevel::handle_request_show_window_menu(
+		struct wl_listener *listener, void *data) {
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(
+			listener, xdg_toplevel, request_show_window_menu);
+	struct wlr_xdg_toplevel_show_window_menu_event *event =
+		(struct wlr_xdg_toplevel_show_window_menu_event *)data;
+	xdg_toplevel->emit_signal("request_show_window_menu", xdg_toplevel,
+			event->serial, event->x, event->y);
+}
+
 void WlrXdgToplevel::handle_set_parent(
 		struct wl_listener *listener, void *data) {
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
@@ -186,15 +240,6 @@ void WlrXdgToplevel::handle_set_app_id(
 	xdg_toplevel->emit_signal("set_app_id", xdg_toplevel);
 }
 
-void WlrXdgToplevel::handle_request_move(
-		struct wl_listener *listener, void *data) {
-	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-			listener, xdg_toplevel, request_move);
-	struct wlr_xdg_toplevel_move_event *event =
-		(struct wlr_xdg_toplevel_move_event *)data;
-	xdg_toplevel->emit_signal("request_move", xdg_toplevel, event->serial);
-}
-
 }
 
 WlrXdgToplevel::WlrXdgToplevel() {
@@ -203,15 +248,28 @@ WlrXdgToplevel::WlrXdgToplevel() {
 
 WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 	wlr_xdg_toplevel = xdg_toplevel;
-	// TODO: Bind more listeners
+	request_maximize.notify = handle_request_maximize;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_maximize,
+			&request_maximize);
+	request_fullscreen.notify = handle_request_fullscreen;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_fullscreen,
+			&request_fullscreen);
+	request_minimize.notify = handle_request_minimize;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_minimize,
+			&request_minimize);
+	request_move.notify = handle_request_move;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_move, &request_move);
+	request_resize.notify = handle_request_resize;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_resize, &request_resize);
+	request_show_window_menu.notify = handle_request_show_window_menu;
+	wl_signal_add(&wlr_xdg_toplevel->events.request_show_window_menu,
+			&request_show_window_menu);
 	set_parent.notify = handle_set_parent;
 	wl_signal_add(&wlr_xdg_toplevel->events.set_parent, &set_parent);
 	set_title.notify = handle_set_title;
 	wl_signal_add(&wlr_xdg_toplevel->events.set_title, &set_title);
 	set_app_id.notify = handle_set_app_id;
 	wl_signal_add(&wlr_xdg_toplevel->events.set_app_id, &set_app_id);
-	request_move.notify = handle_request_move;
-	wl_signal_add(&wlr_xdg_toplevel->events.request_move, &request_move);
 }
 
 WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
@@ -281,6 +339,31 @@ void WlrXdgToplevel::_bind_methods() {
 			&WlrXdgToplevel::set_tiled);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXdgToplevel::send_close);
 
+	ADD_SIGNAL(MethodInfo("request_maximize",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("request_fullscreen",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
+			PropertyInfo(Variant::BOOL, "fullscreen")));
+	ADD_SIGNAL(MethodInfo("request_minimize",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("request_move",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
+			PropertyInfo(Variant::INT, "serial")));
+	ADD_SIGNAL(MethodInfo("request_resize",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
+			PropertyInfo(Variant::INT, "serial"),
+			PropertyInfo(Variant::INT, "edges")));
+	ADD_SIGNAL(MethodInfo("request_show_window_menu",
+			PropertyInfo(Variant::OBJECT,
+				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
+			PropertyInfo(Variant::INT, "serial"),
+			PropertyInfo(Variant::INT, "x"),
+			PropertyInfo(Variant::INT, "y")));
 	ADD_SIGNAL(MethodInfo("set_app_id",
 			PropertyInfo(Variant::OBJECT,
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
@@ -290,10 +373,6 @@ void WlrXdgToplevel::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("set_parent",
 			PropertyInfo(Variant::OBJECT,
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
-	ADD_SIGNAL(MethodInfo("request_move",
-			PropertyInfo(Variant::OBJECT,
-				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
-			PropertyInfo(Variant::INT, "serial")));
 }
 
 WlrXdgToplevelState::WlrXdgToplevelState() {
