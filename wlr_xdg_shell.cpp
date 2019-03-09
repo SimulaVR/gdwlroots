@@ -413,12 +413,77 @@ void WlrXdgToplevel::_bind_methods() {
 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
 }
 
+bool WlrXdgToplevelState::get_maximized() const {
+	return state->maximized;
+}
+
+bool WlrXdgToplevelState::get_fullscreen() const {
+	return state->fullscreen;
+}
+
+bool WlrXdgToplevelState::get_resizing() const {
+	return state->resizing;
+}
+
+bool WlrXdgToplevelState::get_activated() const {
+	return state->activated;
+}
+
+bool WlrXdgToplevelState::get_tiled() const {
+	return state->tiled;
+}
+
+uint32_t WlrXdgToplevelState::get_width() const {
+	return state->width;
+}
+
+uint32_t WlrXdgToplevelState::get_height() const {
+	return state->height;
+}
+
+uint32_t WlrXdgToplevelState::get_min_width() const {
+	return state->min_width;
+}
+
+uint32_t WlrXdgToplevelState::get_min_height() const {
+	return state->min_height;
+}
+
+uint32_t WlrXdgToplevelState::get_max_width() const {
+	return state->max_width;
+}
+
+uint32_t WlrXdgToplevelState::get_max_height() const {
+	return state->max_height;
+}
+
 WlrXdgToplevelState::WlrXdgToplevelState() {
 	/* Not used */
 }
 
 void WlrXdgToplevelState::_bind_methods() {
-	// TODO: bind all that stuff
+	ClassDB::bind_method(D_METHOD("get_maximized"),
+			&WlrXdgToplevelState::get_maximized);
+	ClassDB::bind_method(D_METHOD("get_fullscreen"),
+			&WlrXdgToplevelState::get_fullscreen);
+	ClassDB::bind_method(D_METHOD("get_resizing"),
+			&WlrXdgToplevelState::get_resizing);
+	ClassDB::bind_method(D_METHOD("get_activated"),
+			&WlrXdgToplevelState::get_activated);
+	ClassDB::bind_method(D_METHOD("get_tiled"),
+			&WlrXdgToplevelState::get_tiled);
+	ClassDB::bind_method(D_METHOD("get_width"),
+			&WlrXdgToplevelState::get_width);
+	ClassDB::bind_method(D_METHOD("get_height"),
+			&WlrXdgToplevelState::get_height);
+	ClassDB::bind_method(D_METHOD("get_min_width"),
+			&WlrXdgToplevelState::get_min_width);
+	ClassDB::bind_method(D_METHOD("get_min_height"),
+			&WlrXdgToplevelState::get_min_height);
+	ClassDB::bind_method(D_METHOD("get_max_width"),
+			&WlrXdgToplevelState::get_max_width);
+	ClassDB::bind_method(D_METHOD("get_max_height"),
+			&WlrXdgToplevelState::get_max_height);
 }
 
 WlrXdgPopup::WlrXdgPopup() {

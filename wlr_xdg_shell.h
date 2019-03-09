@@ -29,8 +29,31 @@ public:
 class WlrXdgToplevelState : public Object {
 	GDCLASS(WlrXdgToplevelState, Object);
 
+	struct wlr_xdg_toplevel_state *state;
+
 protected:
 	static void _bind_methods();
+
+public:
+	enum TilingEdges {
+		TILING_EDGE_NONE = 0,
+		TILING_EDGE_TOP = 1,
+		TILING_EDGE_BOTTOM = 2,
+		TILING_EDGE_LEFT = 4,
+		TILING_EDGE_RIGHT = 8,
+	};
+
+	bool get_maximized() const;
+	bool get_fullscreen() const;
+	bool get_resizing() const;
+	bool get_activated() const;
+	bool get_tiled() const;
+	uint32_t get_width() const;
+	uint32_t get_height() const;
+	uint32_t get_min_width() const;
+	uint32_t get_min_height() const;
+	uint32_t get_max_width() const;
+	uint32_t get_max_height() const;
 
 	/* Necessary for Object */
 	WlrXdgToplevelState();
