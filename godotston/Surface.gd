@@ -26,6 +26,8 @@ func set_seat(_seat):
 func focus():
 	if toplevel != null:
 		toplevel.set_activated(true)
+	if seat != null:
+		seat.keyboard_notify_enter(xdg_surface.get_wlr_surface())
 
 func _handle_destroy(xdg_surface):
 	queue_free()

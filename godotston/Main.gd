@@ -29,5 +29,18 @@ func _on_viewport_change():
 	get_node("ViewportBounds/Bottom").shape.d = -vp.y
 	get_node("ViewportBounds/Right").shape.d = -vp.x
 
+func _on_wlr_key(keyboard, event):
+	var seat = get_node("WaylandDisplay/WlrSeat")
+	seat.keyboard_notify_key(event)
+
+func _on_wlr_modifiers(keyboard):
+	var seat = get_node("WaylandDisplay/WlrSeat")
+	seat.keyboard_notify_modifiers()
+
 func _ready():
 	get_viewport().connect("size_changed", self, "_on_viewport_change")
+	var seat = get_node("WaylandDisplay/WlrSeat")
+	var keyboard = get_node("WaylandDisplay/WlrKeyboard")
+	seat.set_keyboard(keyboard)
+	keyboard.connect("key", self, "_on_wlr_key")
+	keyboard.connect("modifiers", self, "_on_wlr_modifiers")
