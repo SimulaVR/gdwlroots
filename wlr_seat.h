@@ -6,6 +6,7 @@
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wayland_global.h"
+#include "wlr_keyboard.h"
 #include "wlr_surface.h"
 extern "C" {
 #include <wayland-server.h>
@@ -43,6 +44,11 @@ public:
 	uint32_t pointer_notify_button(Variant button, bool pressed);
 	void pointer_notify_frame();
 	void pointer_clear_focus();
+
+	void set_keyboard(Variant _keyboard);
+	void keyboard_notify_enter(Variant _surface);
+	void keyboard_notify_key(Variant key_event);
+	void keyboard_notify_modifiers();
 
 	bool validate_grab_serial(uint32_t serial);
 

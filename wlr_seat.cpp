@@ -152,6 +152,34 @@ bool WlrSeat::validate_grab_serial(uint32_t serial) {
 	return wlr_seat_validate_grab_serial(wlr_seat, serial);
 }
 
+void WlrSeat::set_keyboard(Variant _keyboard) {
+	auto keyboard = dynamic_cast<WlrKeyboard *>((Object *)_keyboard);
+	wlr_seat_set_keyboard(wlr_seat, keyboard->get_wlr_input_device());
+}
+
+void WlrSeat::keyboard_notify_enter(Variant _surface) {
+	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
+	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
+	wlr_seat_keyboard_notify_enter(wlr_seat, surface->get_wlr_surface(),
+		keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+}
+
+void WlrSeat::keyboard_notify_key(Variant _key_event) {
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	auto key_event = dynamic_cast<WlrEventKeyboardKey *>((Object *)_key_event);
+	auto event = key_event->get_wlr_event();
+	wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now),
+			event->keycode, event->state);
+}
+
+void WlrSeat::keyboard_notify_modifiers() {
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
+	wlr_seat_keyboard_notify_modifiers(wlr_seat, &keyboard->modifiers);
+}
+
 void WlrSeat::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_capabilities", "capabilities"),
 			&WlrSeat::set_capabilities);
@@ -168,6 +196,14 @@ void WlrSeat::_bind_methods() {
 			&WlrSeat::pointer_notify_button);
 	ClassDB::bind_method(D_METHOD("pointer_notify_frame"),
 			&WlrSeat::pointer_notify_frame);
+
+	ClassDB::bind_method(D_METHOD("set_keyboard"), &WlrSeat::set_keyboard);
+	ClassDB::bind_method(D_METHOD("keyboard_notify_enter", "surface"),
+			&WlrSeat::keyboard_notify_enter);
+	ClassDB::bind_method(D_METHOD("keyboard_notify_key", "key_event"),
+			&WlrSeat::keyboard_notify_key);
+	ClassDB::bind_method(D_METHOD("keyboard_notify_modifiers"),
+			&WlrSeat::keyboard_notify_modifiers);
 
 	ClassDB::bind_method(D_METHOD("validate_grab_serial", "serial"),
 			&WlrSeat::validate_grab_serial);
