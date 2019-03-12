@@ -344,8 +344,6 @@ static struct key_map map[] = {
 	{ GDKEY_LAUNCHMEDIA, KEY_MEDIA },
 	{ GDKEY_UNKNOWN, KEY_UNKNOWN },
 	{ GDKEY_SPACE, KEY_SPACE },
-	{ GDKEY_NUMBERSIGN, KEY_NUMERIC_POUND },
-	{ GDKEY_DOLLAR, KEY_DOLLAR },
 	{ GDKEY_APOSTROPHE, KEY_APOSTROPHE },
 	{ GDKEY_PARENLEFT, KEY_KPLEFTPAREN },
 	{ GDKEY_PARENRIGHT, KEY_KPRIGHTPAREN },
@@ -401,6 +399,14 @@ static struct key_map map[] = {
 	{ GDKEY_PLUSMINUS, KEY_KPPLUSMINUS },
 	{ GDKEY_MULTIPLY, KEY_KPASTERISK },
 	{ GDKEY_DIVISION, KEY_KPSLASH },
+	/* Massive hack because godot lies about giving us scancodes */
+	{ GDKEY_EXCLAM, KEY_1 },
+	{ GDKEY_AT, KEY_2 },
+	{ GDKEY_NUMBERSIGN, KEY_3 },
+	{ GDKEY_DOLLAR, KEY_4 },
+	{ GDKEY_PERCENT, KEY_5 },
+	{ GDKEY_ASCIICIRCUM, KEY_6 },
+	{ GDKEY_AMPERSAND, KEY_7 },
 };
 
 uint32_t eudev_from_godot(uint32_t godot) {
