@@ -1,6 +1,6 @@
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "gles2_renderer.h"
-#include "servers/visual/visual_server_globals.h"
+#include "servers/visual/visual_server_global.h"
 #include "wayland_display.h"
 #include "wlr_backend.h"
 #include <assert.h>
