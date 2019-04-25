@@ -11,14 +11,14 @@ all: xdg-shell-protocol.h xdg-shell-protocol.c
 # protocols, which are specified in XML. wlroots requires you to rig these up
 # to your build system yourself and provide them in the include path.
 xdg-shell-protocol.h:
-        $(WAYLAND_SCANNER) server-header \
-                $(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
+	$(WAYLAND_SCANNER) server-header \
+		$(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
 
 xdg-shell-protocol.c: xdg-shell-protocol.h
-        $(WAYLAND_SCANNER) private-code \
-                $(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
+	$(WAYLAND_SCANNER) private-code \
+		$(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
 
 clean:
-        rm -f xdg-shell-protocol.h xdg-shell-protocol.c
+	rm -f xdg-shell-protocol.h xdg-shell-protocol.c
 
 .PHONY: clean
