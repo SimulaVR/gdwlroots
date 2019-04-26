@@ -116,11 +116,13 @@ void WlrXdgSurface::for_each_surface(Variant func) {
 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
 }
 
-void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {
+//void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {
+void WlrXdgSurface::for_each_surface_ffi(void * func) {
 	wlr_xdg_surface_for_each_surface(
                                    wlr_xdg_surface,
                                    for_each_surface_iter_ffi,
-                                   (void *) func
+                                   //(void *) func
+                                   func
                                    );
 }
 
