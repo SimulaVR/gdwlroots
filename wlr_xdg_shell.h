@@ -11,6 +11,8 @@ extern "C" {
 #include <wlr/types/wlr_xdg_shell.h>
 }
 
+typedef void (*surface_iter_t)(WlrSurface * surface, int sx, int s);
+
 class WlrXdgPopup : public Object {
 	GDCLASS(WlrXdgPopup, Object);
 
@@ -151,6 +153,8 @@ public:
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
 	void for_each_surface(Variant func);
+	//void for_each_surface_ffi(surface_iter_t func);
+	void for_each_surface_ffi(void * func);
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
 
 	static WlrXdgSurface *from_wlr_xdg_surface(

@@ -2,4 +2,5 @@
 *.pyc
 xdg-shell.c
 xdg-shell-protocol.h
+xdg-shell-protocol.c
 .import

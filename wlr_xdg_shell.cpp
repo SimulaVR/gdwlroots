@@ -98,12 +98,32 @@ static void for_each_surface_iter(struct wlr_surface *surface,
 	}
 }
 
+static void for_each_surface_iter_ffi(struct wlr_surface *surface,
+                                  int sx, int sy, void *data) {
+  surface_iter_t func = (surface_iter_t)data;
+
+  WlrSurface * wlrSurface = WlrSurface::from_wlr_surface(surface);
+
+  func(wlrSurface, sx, sy);
+
+}
+
 }
 
 void WlrXdgSurface::for_each_surface(Variant func) {
 	auto fn = (Ref<FuncRef>)func;
 	wlr_xdg_surface_for_each_surface(
 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
+}
+
+//void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {
+void WlrXdgSurface::for_each_surface_ffi(void * func) {
+	wlr_xdg_surface_for_each_surface(
+                                   wlr_xdg_surface,
+                                   for_each_surface_iter_ffi,
+                                   //(void *) func
+                                   func
+                                   );
 }
 
 WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
@@ -126,6 +146,8 @@ void WlrXdgSurface::_bind_methods() {
 			&WlrXdgSurface::get_wlr_surface);
 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
 			&WlrXdgSurface::for_each_surface);
+	ClassDB::bind_method(D_METHOD("for_each_surface_ffi", "func"),
+      &WlrXdgSurface::for_each_surface);
 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
 			&WlrXdgSurface::surface_at);
 
