@@ -4,11 +4,14 @@
 #include "wayland_display.h"
 #include "wlr_seat.h"
 #include "wlr_surface.h"
+#include <iostream>
+using namespace std;
 extern "C" {
 #include <linux/input-event-codes.h>
 #include <wayland-server.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_xdg_shell.h>
 
 static inline int64_t timespec_to_msec(const struct timespec *a) {
 	return (int64_t)a->tv_sec * 1000 + a->tv_nsec / 1000000;
@@ -39,12 +42,14 @@ WlrSeat::~WlrSeat() {
 }
 
 void WlrSeat::pointer_notify_enter(Variant _surface, double sx, double sy) {
+  //cout << "WlrSeat::pointer_notify_enter" << endl;
 	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
 }
 
 void WlrSeat::pointer_clear_focus() {
+  //cout << "pointer_clear_focus (wlr_seat):" << wlr_seat << endl;
 	wlr_seat_pointer_clear_focus(wlr_seat);
 }
 
@@ -102,6 +107,32 @@ uint32_t WlrSeat::_pointer_notify_axis(uint32_t time, ButtonList godot_button) {
 	return 0;
 }
 
+void WlrSeat::pointer_notify_axis_continuous(double x, double y) {
+  cout << "WlrSeat::pointer_notify_axis_continuous: (" << x << "," << y << ")" << endl;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	wlr_seat_pointer_notify_axis(wlr_seat,
+                               timespec_to_msec(&now),
+                               WLR_AXIS_ORIENTATION_VERTICAL,
+                               (-(y * 650)),//value
+                               0,           //discrete value
+                               WLR_AXIS_SOURCE_CONTINUOUS //WLR_AXIS_SOURCE_WHEEL
+                               );
+
+  //For now we omit:
+  /*
+	/ wlr_seat_pointer_notify_axis(wlr_seat,
+  /                              timespec_to_msec(&now),
+  /                              WLR_AXIS_ORIENTATION_VERTICAL,
+  /                              (-(x * 650)),//value
+  /                              0,           //discrete value
+  /                              WLR_AXIS_SOURCE_CONTINUOUS //WLR_AXIS_SOURCE_WHEEL
+  /                              );
+  */
+  return;
+}
+
 uint32_t WlrSeat::pointer_notify_button(Variant button, bool pressed) {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -153,11 +184,13 @@ bool WlrSeat::validate_grab_serial(uint32_t serial) {
 }
 
 void WlrSeat::set_keyboard(Variant _keyboard) {
+  //cout << "WlrSeat::set_keyboard" << endl;
 	auto keyboard = dynamic_cast<WlrKeyboard *>((Object *)_keyboard);
 	wlr_seat_set_keyboard(wlr_seat, keyboard->get_wlr_input_device());
 }
 
 void WlrSeat::keyboard_notify_enter(Variant _surface) {
+  //cout << "WlrSeat::keyboard_notify_enter" << endl;
 	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
 	wlr_seat_keyboard_notify_enter(wlr_seat, surface->get_wlr_surface(),
@@ -169,11 +202,21 @@ void WlrSeat::keyboard_notify_key(Variant _key_event) {
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	auto key_event = dynamic_cast<WlrEventKeyboardKey *>((Object *)_key_event);
 	auto event = key_event->get_wlr_event();
+  //auto event_keycode = event->keycode;
+  //auto event_state = event->state;
+  //cout << "WlrSeat::keyboard_notify_key(..) (event->keycode, event->state): "
+       // << "("
+       // << event_keycode
+       // << ", "
+       // << event_state
+       // << ")"
+       // << endl;
 	wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now),
 			event->keycode, event->state);
 }
 
 void WlrSeat::keyboard_notify_modifiers() {
+  //cout << "WlrSeat::keyboard_notify_modifiers" << endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
@@ -194,6 +237,11 @@ void WlrSeat::_bind_methods() {
 			&WlrSeat::pointer_notify_motion);
 	ClassDB::bind_method(D_METHOD("pointer_notify_button", "button", "pressed"),
 			&WlrSeat::pointer_notify_button);
+
+
+	ClassDB::bind_method(D_METHOD("pointer_notify_axis_continuous", "sx", "sy"),
+                       &WlrSeat::pointer_notify_axis_continuous);
+
 	ClassDB::bind_method(D_METHOD("pointer_notify_frame"),
 			&WlrSeat::pointer_notify_frame);
 

@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <stdint.h>
 #include "keycode_map.h"
+#include <iostream>
+using namespace std;
 
 struct key_map {
 	uint32_t godot_scancode;
@@ -347,8 +349,8 @@ static struct key_map map[] = {
 	{ GDKEY_APOSTROPHE, KEY_APOSTROPHE },
 	{ GDKEY_PARENLEFT, KEY_KPLEFTPAREN },
 	{ GDKEY_PARENRIGHT, KEY_KPRIGHTPAREN },
-	{ GDKEY_ASTERISK, KEY_KPASTERISK },
-	{ GDKEY_PLUS, KEY_KPPLUS },
+	{ GDKEY_ASTERISK, KEY_KPASTERISK }, //Is KEY_KPASTERISK the right asterisk?
+	{ GDKEY_PLUS, KEY_KPPLUS }, //Is KEY_KPPLUS the right plus?
 	{ GDKEY_COMMA, KEY_COMMA },
 	{ GDKEY_MINUS, KEY_MINUS },
 	{ GDKEY_PERIOD, KEY_DOT },
@@ -365,7 +367,7 @@ static struct key_map map[] = {
 	{ GDKEY_9, KEY_9 },
 	{ GDKEY_SEMICOLON, KEY_SEMICOLON },
 	{ GDKEY_EQUAL, KEY_EQUAL },
-	{ GDKEY_QUESTION, KEY_QUESTION },
+	//{ GDKEY_QUESTION, KEY_QUESTION }, //Doesn't work
 	{ GDKEY_A, KEY_A },
 	{ GDKEY_B, KEY_B },
 	{ GDKEY_C, KEY_C },
@@ -407,9 +409,27 @@ static struct key_map map[] = {
 	{ GDKEY_PERCENT, KEY_5 },
 	{ GDKEY_ASCIICIRCUM, KEY_6 },
 	{ GDKEY_AMPERSAND, KEY_7 },
+	{ GDKEY_COLON, KEY_SEMICOLON },
+
+  //George: Let's extend Drew's hack to the other special keys:
+	{ GDKEY_LESS, KEY_COMMA },
+	{ GDKEY_EQUAL , KEY_EQUAL },
+	{ GDKEY_GREATER , KEY_DOT},
+  //{ GDKEY_QUESTION, KEY_QUESTION }, //Doesn't work
+  { GDKEY_QUESTION, KEY_SLASH },      //..but the hack does
+	{ GDKEY_QUOTEDBL, KEY_APOSTROPHE },
+	{ GDKEY_UNDERSCORE, KEY_MINUS },
+	{ GDKEY_KP_PERIOD, KEY_KPDOT },
+  { GDKEY_QUOTELEFT, KEY_GRAVE},
+	{ GDKEY_ASCIITILDE, KEY_GRAVE },
+  { GDKEY_BAR, KEY_BACKSLASH },
+	{ GDKEY_BRACKETLEFT, KEY_LEFTBRACE },
+	{ GDKEY_BRACKETRIGHT, KEY_RIGHTBRACE },
+  { GDKEY_QUESTION, KEY_QUESTION },
 };
 
 uint32_t eudev_from_godot(uint32_t godot) {
+  //cout << "godot key: " << godot << endl;
 	for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); ++i) {
 		if (map[i].godot_scancode == godot) {
 			return map[i].eudev_scancode;

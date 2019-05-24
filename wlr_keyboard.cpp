@@ -5,6 +5,8 @@
 #include "keycode_map.h"
 #include "scene/main/node.h"
 #include "wlr_keyboard.h"
+#include <iostream>
+using namespace std;
 extern "C" {
 #include <xkbcommon/xkbcommon.h>
 #include <wlr/interfaces/wlr_keyboard.h>
@@ -12,6 +14,7 @@ extern "C" {
 #include <wlr/types/wlr_keyboard.h>
 
 static void keyboard_destroy(struct wlr_keyboard *kb) {
+  //cout << "keyboard_destroy" << endl;
 	// This space deliberately left blank
 }
 
@@ -36,6 +39,7 @@ void WlrKeyboard::_bind_methods() {
 extern "C" {
 
 void WlrKeyboard::handle_key(struct wl_listener *listener, void *data) {
+  //cout << "WlrKeyboard::handle_key" << endl;
 	WlrKeyboard *keyboard = wl_container_of(listener, keyboard, key);
 	struct wlr_event_keyboard_key *event =
 		(struct wlr_event_keyboard_key *)data;
@@ -44,6 +48,7 @@ void WlrKeyboard::handle_key(struct wl_listener *listener, void *data) {
 }
 
 void WlrKeyboard::handle_modifiers(struct wl_listener *listener, void *data) {
+  //cout << "WlrKeyboard::handle_modifiers" << endl;
 	WlrKeyboard *keyboard = wl_container_of(listener, keyboard, modifiers);
 	keyboard->emit_signal("modifiers", keyboard);
 }
@@ -51,6 +56,7 @@ void WlrKeyboard::handle_modifiers(struct wl_listener *listener, void *data) {
 }
 
 void WlrKeyboard::ensure_keyboard() {
+  //cout << "WlrKeyboard::ensure_keyboard" << endl;
 	struct xkb_rule_names rules = { 0 };
 
 	wlr_keyboard_init(&wlr_keyboard, &keyboard_impl);
@@ -86,12 +92,14 @@ void WlrKeyboard::_notification(int p_what) {
 	case NOTIFICATION_ENTER_TREE:
 		ensure_keyboard();
 		set_process_input(true);
+    //cout << "The keybhoard should be in the tree now." << endl;
 		break;
 	case NOTIFICATION_EXIT_TREE:
 		if (keyboard_init) {
 			wlr_keyboard_destroy(&wlr_keyboard);
 		}
 		set_process_input(false);
+    //cout << "The keybhoard should be out of the tree now." << endl;
 		break;
 	}
 }
@@ -101,13 +109,15 @@ static inline int64_t timespec_to_msec(const struct timespec *a) {
 }
 
 void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
+  //cout << "WlrKeyboard::_input" << endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid()) {
 		struct wlr_event_keyboard_key event = { 0 };
 		event.time_msec = timespec_to_msec(&now);
-		event.keycode = eudev_from_godot(k->get_scancode());
+		event.keycode = eudev_from_godot(k->get_scancode()); //old
+    //event.keycode = k->get_raw_keycode(); //Attempt to use David hack; causes weird keyboard behavior
 		event.state = k->is_pressed() ? WLR_KEY_PRESSED : WLR_KEY_RELEASED;
 		event.update_state = true;
 		wlr_keyboard_notify_key(&wlr_keyboard, &event);
@@ -115,15 +125,18 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
 }
 
 struct wlr_input_device *WlrKeyboard::get_wlr_input_device() {
+  //cout << "*WlrKeyboard::get_wlr_input_device" << endl;
 	return &wlr_input_device;
 }
 
 WlrKeyboard::WlrKeyboard() {
+  //cout << "WlrKeyboard::WlrKeyboard" << endl;
 	keyboard_init = false;
 	wlr_keyboard = { 0 };
 }
 
 WlrKeyboard::~WlrKeyboard() {
+  //cout << "WlrKeyboard::~WlrKeyboard" << endl;
 	if (keyboard_init) {
 		wlr_keyboard_destroy(&wlr_keyboard);
 	}
@@ -131,13 +144,16 @@ WlrKeyboard::~WlrKeyboard() {
 
 
 WlrEventKeyboardKey::WlrEventKeyboardKey() {
+  //cout << "WlrEventKeyboardKey::WlrEventKeyboardKey" << endl;
 	/* Not used */
 }
 
 WlrEventKeyboardKey::WlrEventKeyboardKey(struct wlr_event_keyboard_key *event) {
+  //cout << "WlrEventKeyboardKey::WlrEventKeyboardKey" << endl;
 	this->event = event;
 }
 
 struct wlr_event_keyboard_key *WlrEventKeyboardKey::get_wlr_event() {
+  //cout << "*WlrEventKeyboardKey::get_wlr_event" << endl;
 	return event;
 }
