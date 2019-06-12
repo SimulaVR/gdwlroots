@@ -108,7 +108,7 @@ uint32_t WlrSeat::_pointer_notify_axis(uint32_t time, ButtonList godot_button) {
 }
 
 void WlrSeat::pointer_notify_axis_continuous(double x, double y) {
-  cout << "WlrSeat::pointer_notify_axis_continuous: (" << x << "," << y << ")" << endl;
+  //cout << "WlrSeat::pointer_notify_axis_continuous: (" << x << "," << y << ")" << endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
