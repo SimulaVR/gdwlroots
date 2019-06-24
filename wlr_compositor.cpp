@@ -58,3 +58,7 @@ WlrCompositor::~WlrCompositor() {
 	wlr_compositor_destroy(wlr_compositor);
 	wlr_compositor = NULL;
 }
+
+struct wlr_compositor * WlrCompositor::get_wlr_compositor() {
+  return wlr_compositor;
+}

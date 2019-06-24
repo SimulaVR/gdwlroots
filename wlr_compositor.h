@@ -31,6 +31,7 @@ protected:
 public:
 	WlrCompositor();
 	~WlrCompositor();
+  struct wlr_compositor * get_wlr_compositor();
 };
 
 #endif

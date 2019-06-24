@@ -5,189 +5,142 @@
 #include "wayland_display.h"
 #include "wlr_surface.h"
 #include "wlr_xwayland.h"
+#include "wlr_compositor.h"
+#include <iostream>
+
 extern "C" {
 #include <wayland-server.h>
 //#include <wlr/xwayland.h>
 #include "xwayland.h"
 
-// void WlrXdgShell::handle_new_xdg_surface(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgShell *xdg_shell = wl_container_of(
-// 			listener, xdg_shell, new_xdg_surface);
-// 	auto surface = WlrXdgSurface::from_wlr_xdg_surface(
-// 			(struct wlr_xdg_surface *)data);
-// 	xdg_shell->emit_signal("new_surface", surface);
-// }
+void WlrXWayland::handle_new_xwayland_surface(
+		struct wl_listener *listener, void *data) {
+  WlrXWayland *xwayland = wl_container_of(
+			listener, xwayland, new_xwayland_surface);
+	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
+      (struct wlr_xwayland_surface *)data);
+	xwayland->emit_signal("new_surface", surface);
+}
 
-// }
+}
 
-// void WlrXdgShell::_bind_methods() {
-// 	ADD_SIGNAL(MethodInfo("new_surface",
-// 				PropertyInfo(Variant::OBJECT,
-// 					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-// }
+void WlrXWayland::_bind_methods() {
+	ADD_SIGNAL(MethodInfo("new_surface",
+				PropertyInfo(Variant::OBJECT,
+					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+}
 
-// void WlrXdgShell::ensure_wl_global(WaylandDisplay *display) {
-// 	if (wlr_xdg_shell) {
-// 		return;
-// 	}
-// 	wlr_xdg_shell = wlr_xdg_shell_create(display->get_wayland_display());
-// 	new_xdg_surface.notify = handle_new_xdg_surface;
-// 	wl_signal_add(&wlr_xdg_shell->events.new_surface,
-// 			&new_xdg_surface);
-// }
+void WlrXWayland::start_xwayland(WlrCompositor * compositor) {
+	if (wlr_xwayland) {
+    std::cout << "Xwayland is already started." << std::endl;
+		return;
+	}
 
-// void WlrXdgShell::destroy_wl_global(WaylandDisplay *display) {
-// 	wlr_xdg_shell_destroy(wlr_xdg_shell);
-// 	wlr_xdg_shell = NULL;
-// }
+  struct wlr_compositor * wlr_compositor = compositor->get_wlr_compositor();
+  struct wl_display * wl_display = get_wayland_display()->get_wayland_display();
 
-// WlrXdgShell::WlrXdgShell() {
-// 	wlr_xdg_shell = NULL;
-// }
+  if (wl_display && wlr_compositor) {
+    wlr_xwayland = wlr_xwayland_create(wl_display, wlr_compositor, true); //`true` forces XWayland to start in lazy mode
 
-// WlrXdgShell::~WlrXdgShell() {
-// 	wlr_xdg_shell_destroy(wlr_xdg_shell);
-// 	wlr_xdg_shell = NULL;
-// }
+    new_xwayland_surface.notify = handle_new_xwayland_surface;
+		wl_signal_add(&wlr_xwayland->events.new_surface,
+                  &new_xwayland_surface
+                  );
 
-// WlrXdgSurface::XdgSurfaceRole WlrXdgSurface::get_role() const {
-// 	switch (wlr_xdg_surface->role) {
-// 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
-// 		return XDG_SURFACE_ROLE_TOPLEVEL;
-// 	case WLR_XDG_SURFACE_ROLE_POPUP:
-// 		return XDG_SURFACE_ROLE_POPUP;
-// 	case WLR_XDG_SURFACE_ROLE_NONE:
-// 	default:
-// 		return XDG_SURFACE_ROLE_NONE;
-// 	}
-// }
+    //Things we omit from XWayland initialization:
+    //1. Adjusting DISPLAY environment variable
+    //2. xcursor stuff
+    //See i.e. https://github.com/swaywm/wlroots/blob/b3f42548d068996995490585e27e16c191b4a64c/rootston/desktop.c#L358
 
-// WlrXdgToplevel *WlrXdgSurface::get_xdg_toplevel() const {
-// 	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL);
-// 	return toplevel;
-// }
+  } else {
+    std::cout << "Failed to start xwayland." << std::endl;
+  }
+}
 
-// WlrXdgPopup *WlrXdgSurface::get_xdg_popup() const {
-// 	assert(wlr_xdg_surface->role == WLR_XDG_SURFACE_ROLE_POPUP);
-// 	return popup;
-// }
+void WlrXWayland::ensure_wl_global(WaylandDisplay *display) {
+  //This function (automatically called by WaylandGlobal) intentionally left blank.
+  // We use start_xwayland (called from GDScript/godot-haskell) instead so we can gain access to a WlrCompositor
+}
 
-// Rect2 WlrXdgSurface::get_geometry() {
-// 	return Rect2(wlr_xdg_surface->geometry.x, wlr_xdg_surface->geometry.y,
-// 			wlr_xdg_surface->geometry.width, wlr_xdg_surface->geometry.height);
-// }
+void WlrXWayland::destroy_wl_global(WaylandDisplay *display) {
+	wlr_xwayland_destroy(wlr_xwayland);
+	wlr_xwayland = NULL;
+}
 
-// WlrSurface *WlrXdgSurface::get_wlr_surface() const {
-// 	return WlrSurface::from_wlr_surface(wlr_xdg_surface->surface);
-// }
+WlrXWayland::WlrXWayland() {
+	wlr_xwayland = NULL;
+}
 
-// extern "C" {
+WlrXWayland::~WlrXWayland() {
+	wlr_xwayland_destroy(wlr_xwayland);
+	wlr_xwayland = NULL;
+}
 
-// static void for_each_surface_iter(struct wlr_surface *surface,
-// 		int sx, int sy, void *data) {
-// 	FuncRef *func = (FuncRef *)data;
-// 	const Variant *args[] = {
-// 		new Variant(WlrSurface::from_wlr_surface(surface)),
-// 		new Variant(sx),
-// 		new Variant(sy),
-// 	};
-// 	Variant::CallError error;
-// 	func->call_func((const Variant **)&args[0], 3, error);
-// 	if (error.error != Variant::CallError::Error::CALL_OK) {
-// 		printf("call error %d\n", error.error);
-// 	}
-// }
+Rect2 WlrXWaylandSurface::get_geometry() {
+	return Rect2(wlr_xwayland_surface->x,
+               wlr_xwayland_surface->y,
+               wlr_xwayland_surface->width,
+               wlr_xwayland_surface->height);
+}
 
-// static void for_each_surface_iter_ffi(struct wlr_surface *surface,
-//                                   int sx, int sy, void *data) {
-//   surface_iter_t func = (surface_iter_t)data;
+WlrSurface *WlrXWaylandSurface::get_wlr_surface() const {
+	return WlrSurface::from_wlr_surface(wlr_xwayland_surface->surface);
+}
 
-//   WlrSurface * wlrSurface = WlrSurface::from_wlr_surface(surface);
+extern "C" {
 
-//   func(wlrSurface, sx, sy);
+static void for_each_surface_iter(struct wlr_surface *surface,
+		int sx, int sy, void *data) {
+	FuncRef *func = (FuncRef *)data;
+	const Variant *args[] = {
+		new Variant(WlrSurface::from_wlr_surface(surface)),
+		new Variant(sx),
+		new Variant(sy),
+	};
+	Variant::CallError error;
+	func->call_func((const Variant **)&args[0], 3, error);
+	if (error.error != Variant::CallError::Error::CALL_OK) {
+		printf("call error %d\n", error.error);
+	}
+}
 
-// }
-
-// }
-
-// void WlrXdgSurface::for_each_surface(Variant func) {
+//We omit implementing this due to lack of clearly usable
+// `*xwayland_children_for_each_surface`
+// void WlrXWaylandSurface::for_each_surface(Variant func) {
 // 	auto fn = (Ref<FuncRef>)func;
-// 	wlr_xdg_surface_for_each_surface(
-// 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
+// 	wlr_xwayland_surface_for_each_surface(
+// 			wlr_xwayland_surface, for_each_surface_iter, fn.ptr());
 // }
 
-// //void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {
-// void WlrXdgSurface::for_each_surface_ffi(void * func) {
-// 	wlr_xdg_surface_for_each_surface(
-//                                    wlr_xdg_surface,
-//                                    for_each_surface_iter_ffi,
-//                                    //(void *) func
-//                                    func
-//                                    );
-// }
+WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
+  auto surface = wlr_xwayland_surface->surface;
+  return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(surface), sx, sy);
+}
 
-// WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
-// 	double sub_x, sub_y;
-// 	struct wlr_surface *result = wlr_xdg_surface_surface_at(
-// 			wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
-// 	return new WlrSurfaceAtResult(
-// 			WlrSurface::from_wlr_surface(result), sub_x, sub_y);
-// }
+extern "C" {
 
-// void WlrXdgSurface::_bind_methods() {
-// 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
-// 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
-// 			&WlrXdgSurface::get_xdg_toplevel);
-// 	ClassDB::bind_method(D_METHOD("get_xdg_popup"),
-// 			&WlrXdgSurface::get_xdg_popup);
-// 	ClassDB::bind_method(D_METHOD("get_geometry"),
-// 			&WlrXdgSurface::get_geometry);
-// 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
-// 			&WlrXdgSurface::get_wlr_surface);
-// 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
-// 			&WlrXdgSurface::for_each_surface);
-// 	ClassDB::bind_method(D_METHOD("for_each_surface_ffi", "func"),
-//       &WlrXdgSurface::for_each_surface);
-// 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
-// 			&WlrXdgSurface::surface_at);
+void WlrXWaylandSurface::handle_destroy(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, destroy);
+	xwayland_surface->emit_signal("destroy", xwayland_surface);
+}
 
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
+void WlrXWaylandSurface::handle_map(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, map);
+	xwayland_surface->emit_signal("map", xwayland_surface);
+}
 
-// 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
-// 			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-// 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT,
-// 			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-// 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT,
-// 			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-// }
+void WlrXWaylandSurface::handle_unmap(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, unmap);
+	xwayland_surface->emit_signal("unmap", xwayland_surface);
+}
 
-// extern "C" {
-
-// void WlrXdgSurface::handle_destroy(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgSurface *xdg_surface = wl_container_of(
-// 			listener, xdg_surface, destroy);
-// 	xdg_surface->emit_signal("destroy", xdg_surface);
-// }
-
-// void WlrXdgSurface::handle_map(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgSurface *xdg_surface = wl_container_of(
-// 			listener, xdg_surface, map);
-// 	xdg_surface->emit_signal("map", xdg_surface);
-// }
-
-// void WlrXdgSurface::handle_unmap(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgSurface *xdg_surface = wl_container_of(
-// 			listener, xdg_surface, unmap);
-// 	xdg_surface->emit_signal("unmap", xdg_surface);
-// }
-
-// }
+}
 
 // WlrXdgSurface::WlrXdgSurface() {
 // 	/* Not used */
@@ -216,13 +169,13 @@ extern "C" {
 // 	}
 // }
 
-// WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
-// 		struct wlr_xdg_surface *xdg_surface) {
-// 	if (xdg_surface->data) {
-// 		return (WlrXdgSurface *)xdg_surface->data;
-// 	}
-// 	return new WlrXdgSurface(xdg_surface);
-// }
+WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
+		struct wlr_xwayland_surface *xwayland_surface) {
+	if (xwayland_surface->data) {
+		return (WlrXWaylandSurface *)xwayland_surface->data;
+	}
+	return new WlrXWaylandSurface(xwayland_surface);
+}
 
 // extern "C" {
 
@@ -405,6 +358,15 @@ void WlrXWaylandSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("request_maximize",
 			PropertyInfo(Variant::OBJECT,
 				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+
+	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
+                                                "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT,
+                                            "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT,
+                                              "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+
+
 // 	ADD_SIGNAL(MethodInfo("request_fullscreen",
 // 			PropertyInfo(Variant::OBJECT,
 // 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
@@ -529,4 +491,28 @@ bool WlrXWaylandSurface::get_maximized() const {
 
 // void WlrXdgPopup::_bind_methods() {
 // 	// TODO: bind classdb
+//}
 }
+
+// void WlrXdgSurface::_bind_methods() {
+// 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
+// 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
+// 			&WlrXdgSurface::get_xdg_toplevel);
+// 	ClassDB::bind_method(D_METHOD("get_xdg_popup"),
+// 			&WlrXdgSurface::get_xdg_popup);
+// 	ClassDB::bind_method(D_METHOD("get_geometry"),
+// 			&WlrXdgSurface::get_geometry);
+// 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
+// 			&WlrXdgSurface::get_wlr_surface);
+// 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
+// 			&WlrXdgSurface::for_each_surface);
+// 	ClassDB::bind_method(D_METHOD("for_each_surface_ffi", "func"),
+//       &WlrXdgSurface::for_each_surface);
+// 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
+// 			&WlrXdgSurface::surface_at);
+
+// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
+// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
+// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
+
+// }
