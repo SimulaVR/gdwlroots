@@ -6,10 +6,13 @@
 #include "wlr_surface.h"
 #include "wlr_xwayland.h"
 #include "wlr_compositor.h"
+//#include "xwayland/xwm.h" We are unable to access this :(
 #include <iostream>
 
 extern "C" {
 #include <wayland-server.h>
+
+//We override xwayland.h to avoid the `class` keyword
 //#include <wlr/xwayland.h>
 #include "xwayland.h"
 
@@ -104,13 +107,14 @@ static void for_each_surface_iter(struct wlr_surface *surface,
 	}
 }
 
-//We omit implementing this due to lack of clearly usable
-// `*xwayland_children_for_each_surface`
-// void WlrXWaylandSurface::for_each_surface(Variant func) {
-// 	auto fn = (Ref<FuncRef>)func;
-// 	wlr_xwayland_surface_for_each_surface(
-// 			wlr_xwayland_surface, for_each_surface_iter, fn.ptr());
-// }
+//We omit implementing this due to lack of clearly usable `*xwayland_children_for_each_surface`:
+/*
+void WlrXWaylandSurface::for_each_surface(Variant func) {
+	auto fn = (Ref<FuncRef>)func;
+	wlr_xwayland_surface_for_each_surface(
+			wlr_xwayland_surface, for_each_surface_iter, fn.ptr());
+}
+*/
 
 WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
   auto surface = wlr_xwayland_surface->surface;
@@ -139,35 +143,7 @@ void WlrXWaylandSurface::handle_unmap(
 			listener, xwayland_surface, unmap);
 	xwayland_surface->emit_signal("unmap", xwayland_surface);
 }
-
 }
-
-// WlrXdgSurface::WlrXdgSurface() {
-// 	/* Not used */
-// }
-
-// WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
-// 	wlr_xdg_surface = xdg_surface;
-// 	xdg_surface->data = this;
-// 	destroy.notify = handle_destroy;
-// 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
-// 	map.notify = handle_map;
-// 	wl_signal_add(&xdg_surface->events.map, &map);
-// 	unmap.notify = handle_unmap;
-// 	wl_signal_add(&xdg_surface->events.unmap, &unmap);
-// 	switch (xdg_surface->role) {
-// 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
-// 		toplevel = WlrXdgToplevel::from_wlr_xdg_toplevel(
-// 				wlr_xdg_surface->toplevel);
-// 		break;
-// 	case WLR_XDG_SURFACE_ROLE_POPUP:
-// 		popup = WlrXdgPopup::from_wlr_xdg_popup(wlr_xdg_surface->popup);
-// 		break;
-// 	case WLR_XDG_SURFACE_ROLE_NONE:
-// 		assert(0);
-// 		break;
-// 	}
-// }
 
 WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
 		struct wlr_xwayland_surface *xwayland_surface) {
@@ -177,7 +153,7 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
 	return new WlrXWaylandSurface(xwayland_surface);
 }
 
-// extern "C" {
+extern "C" {
 
 void WlrXWaylandSurface::handle_request_maximize(
 		struct wl_listener *listener, void *data) {
@@ -186,174 +162,293 @@ void WlrXWaylandSurface::handle_request_maximize(
 	xwayland_surface->emit_signal("request_maximize", xwayland_surface);
 }
 
-// void WlrXdgToplevel::handle_request_fullscreen(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, request_fullscreen);
-// 	struct wlr_xdg_toplevel_set_fullscreen_event *event =
-// 		(struct wlr_xdg_toplevel_set_fullscreen_event *)data;
-// 	// TODO: Implement WlrOutput::from_wlr_output
-// 	xdg_toplevel->emit_signal("request_fullscreen",
-// 			xdg_toplevel, event->fullscreen);
-// }
+void WlrXWaylandSurface::handle_request_fullscreen(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, request_fullscreen);
 
-// void WlrXdgToplevel::handle_request_minimize(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, request_minimize);
-// 	xdg_toplevel->emit_signal("request_minimize", xdg_toplevel);
-// }
+  bool fullscreen = !(xwayland_surface->wlr_xwayland_surface->fullscreen);
 
-// void WlrXdgToplevel::handle_request_move(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, request_move);
-// 	struct wlr_xdg_toplevel_move_event *event =
-// 		(struct wlr_xdg_toplevel_move_event *)data;
-// 	xdg_toplevel->emit_signal("request_move", xdg_toplevel, event->serial);
-// }
+	xwayland_surface->emit_signal("request_fullscreen",
+			xwayland_surface, fullscreen);
+}
 
-// void WlrXdgToplevel::handle_request_resize(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, request_resize);
-// 	struct wlr_xdg_toplevel_resize_event *event =
-// 		(struct wlr_xdg_toplevel_resize_event *)data;
-// 	xdg_toplevel->emit_signal("request_resize", xdg_toplevel,
-// 			event->serial, event->edges);
-// }
+/*
+void WlrXWaylandSurface::handle_request_minimize(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, request_minimize);
+	xwayland_surface->emit_signal("request_minimize", xwayland_surface);
+}
+*/
 
-// void WlrXdgToplevel::handle_request_show_window_menu(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, request_show_window_menu);
-// 	struct wlr_xdg_toplevel_show_window_menu_event *event =
-// 		(struct wlr_xdg_toplevel_show_window_menu_event *)data;
-// 	xdg_toplevel->emit_signal("request_show_window_menu", xdg_toplevel,
-// 			event->serial, event->x, event->y);
-// }
+void WlrXWaylandSurface::handle_request_move(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, request_move);
 
-// void WlrXdgToplevel::handle_set_parent(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, set_parent);
-// 	xdg_toplevel->emit_signal("set_parent", xdg_toplevel);
-// }
+  // This is what's in the `void *data` argument, but we don't make use of it:
+	// struct wlr_xwayland_move_event *event = (struct wlr_xwayland_move_event *)data;
 
-// void WlrXdgToplevel::handle_set_title(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, set_title);
-// 	xdg_toplevel->emit_signal("set_title", xdg_toplevel);
-// }
+	xwayland_surface->emit_signal("request_move",
+                                xwayland_surface
+                                // event->serial //we remove the serial argument in XWayland
+                                );
+}
 
-// void WlrXdgToplevel::handle_set_app_id(
-// 		struct wl_listener *listener, void *data) {
-// 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-// 			listener, xdg_toplevel, set_app_id);
-// 	xdg_toplevel->emit_signal("set_app_id", xdg_toplevel);
-// }
+void WlrXWaylandSurface::handle_request_resize(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, request_resize);
+	struct wlr_xwayland_resize_event *event =
+		(struct wlr_xwayland_resize_event *)data;
+	xwayland_surface->emit_signal("request_resize", xwayland_surface,
+      //event->serial, //We remove the serial argument in xwayland
+      event->edges);
+}
 
-// }
+// We elminate this event/signal in xwayland
+/* void WlrXWaylandSurface::handle_request_show_window_menu(
+   		struct wl_listener *listener, void *data) {
+   	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+   			listener, xwayland_surface, request_show_window_menu);
+   	struct wlr_xwayland_surface_show_window_menu_event *event =
+   		(struct wlr_xwayland_surface_show_window_menu_event *)data;
+   	xwayland_surface->emit_signal("request_show_window_menu", xwayland_surface,
+   			event->serial, event->x, event->y);
+        }
+*/
 
-// WlrXdgToplevel::WlrXdgToplevel() {
-// 	/* Not used */
-// }
+void WlrXWaylandSurface::handle_set_parent(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, set_parent);
+	xwayland_surface->emit_signal("set_parent", xwayland_surface);
+}
+
+void WlrXWaylandSurface::handle_set_title(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, set_title);
+	xwayland_surface->emit_signal("set_title", xwayland_surface);
+}
+
+/*
+void WlrXWaylandSurface::handle_set_app_id(
+		struct wl_listener *listener, void *data) {
+	WlrXWaylandSurface *xwayland_surface = wl_container_of(
+			listener, xwayland_surface, set_app_id);
+	xwayland_surface->emit_signal("set_app_id", xwayland_surface);
+}
+*/
+}
+
+WlrXWaylandSurface::WlrXWaylandSurface() {
+	/* Not used */
+}
 
 WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_surface) {
+  	destroy.notify = handle_destroy;
+  	wl_signal_add(&xwayland_surface->events.destroy, &destroy);
+  	map.notify = handle_map;
+  	wl_signal_add(&xwayland_surface->events.map, &map);
+  	unmap.notify = handle_unmap;
+  	wl_signal_add(&xwayland_surface->events.unmap, &unmap);
+
 	wlr_xwayland_surface = xwayland_surface;
+  xwayland_surface->data = this;
 	request_maximize.notify = handle_request_maximize;
 	wl_signal_add(&wlr_xwayland_surface->events.request_maximize,
 			&request_maximize);
-	// request_fullscreen.notify = handle_request_fullscreen;
-	// wl_signal_add(&wlr_xdg_toplevel->events.request_fullscreen,
-	// 		&request_fullscreen);
+	request_fullscreen.notify = handle_request_fullscreen;
+	wl_signal_add(&wlr_xwayland_surface->events.request_fullscreen,
+			&request_fullscreen);
 	// request_minimize.notify = handle_request_minimize;
-	// wl_signal_add(&wlr_xdg_toplevel->events.request_minimize,
+	// wl_signal_add(&wlr_xwayland_surface->events.request_minimize,
 	// 		&request_minimize);
-	// request_move.notify = handle_request_move;
-	// wl_signal_add(&wlr_xdg_toplevel->events.request_move, &request_move);
-	// request_resize.notify = handle_request_resize;
-	// wl_signal_add(&wlr_xdg_toplevel->events.request_resize, &request_resize);
+	request_move.notify = handle_request_move;
+	wl_signal_add(&wlr_xwayland_surface->events.request_move, &request_move);
+	request_resize.notify = handle_request_resize;
+	wl_signal_add(&wlr_xwayland_surface->events.request_resize, &request_resize);
 	// request_show_window_menu.notify = handle_request_show_window_menu;
-	// wl_signal_add(&wlr_xdg_toplevel->events.request_show_window_menu,
+	// wl_signal_add(&wlr_xwayland_surface->events.request_show_window_menu,
 	// 		&request_show_window_menu);
-	// set_parent.notify = handle_set_parent;
-	// wl_signal_add(&wlr_xdg_toplevel->events.set_parent, &set_parent);
-	// set_title.notify = handle_set_title;
-	// wl_signal_add(&wlr_xdg_toplevel->events.set_title, &set_title);
+	set_parent.notify = handle_set_parent;
+	wl_signal_add(&wlr_xwayland_surface->events.set_parent, &set_parent);
+	set_title.notify = handle_set_title;
+	// wl_signal_add(&wlr_xwayland_surface->events.set_title, &set_title);
 	// set_app_id.notify = handle_set_app_id;
-	// wl_signal_add(&wlr_xdg_toplevel->events.set_app_id, &set_app_id);
+	// wl_signal_add(&wlr_xwayland_surface->events.set_app_id, &set_app_id);
 }
 
-// WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
-// 		struct wlr_xdg_toplevel *xdg_toplevel) {
-// 	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_toplevel->base->data;
-// 	if (surface->toplevel) {
-// 		return surface->toplevel;
-// 	}
-// 	return new WlrXdgToplevel(xdg_toplevel);
-// }
+WlrXWaylandSurface *WlrXWaylandSurface::get_parent() const {
+	return from_wlr_xwayland_surface(wlr_xwayland_surface->parent);
+}
 
-// WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
-// 	return from_wlr_xdg_toplevel(wlr_xdg_toplevel->parent->toplevel);
-// }
+/*
+String WlrXWaylandSurface::get_app_id() const {
+	return String(wlr_xwayland_surface->app_id);
+}
+*/
 
-// String WlrXdgToplevel::get_app_id() const {
-// 	return String(wlr_xdg_toplevel->app_id);
-// }
+String WlrXWaylandSurface::get_title() const {
+	return String(wlr_xwayland_surface->title);
+}
 
-// String WlrXdgToplevel::get_title() const {
-// 	return String(wlr_xdg_toplevel->title);
-// }
+void WlrXWaylandSurface::set_size(Vector2 size) {
+  wlr_xwayland_surface_configure(wlr_xwayland_surface,
+                                 wlr_xwayland_surface->x,
+                                 wlr_xwayland_surface->y,
+                                 size.width,
+                                 size.height);
+}
 
-// void WlrXdgToplevel::set_size(Vector2 size) {
-// 	wlr_xdg_toplevel_set_size(wlr_xdg_toplevel->base, size.width, size.height);
-// }
-
-// void WlrXdgToplevel::set_activated(bool activated) {
-// 	wlr_xdg_toplevel_set_activated(wlr_xdg_toplevel->base, activated);
-// }
+void WlrXWaylandSurface::set_activated(bool activated) {
+  wlr_xwayland_surface_activate(wlr_xwayland_surface, activated);
+}
 
 void WlrXWaylandSurface::set_maximized(bool maximized) {
 	wlr_xwayland_surface_set_maximized(wlr_xwayland_surface, maximized);
 }
 
-// void WlrXdgToplevel::set_fullscreen(bool fullscreen) {
-// 	wlr_xdg_toplevel_set_fullscreen(wlr_xdg_toplevel->base, fullscreen);
-// }
+void WlrXWaylandSurface::set_fullscreen(bool fullscreen) {
+  wlr_xwayland_surface_set_fullscreen(wlr_xwayland_surface, fullscreen);
+}
 
-// void WlrXdgToplevel::set_resizing(bool resizing) {
-// 	wlr_xdg_toplevel_set_resizing(wlr_xdg_toplevel->base, resizing);
-// }
+/*
+void WlrXWaylandSurface::set_resizing(bool resizing) {
+	wlr_xdg_toplevel_set_resizing(wlr_xdg_toplevel->base, resizing);
+}
+*/
 
-// void WlrXdgToplevel::set_tiled(bool tiled) {
-// 	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled);
-// }
+/*
+void WlrXWaylandSurface::set_tiled(bool tiled) {
+	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled);
+}
+*/
 
-// void WlrXdgToplevel::send_close() {
-// 	wlr_xdg_toplevel_send_close(wlr_xdg_toplevel->base);
+void WlrXWaylandSurface::send_close() {
+  wlr_xwayland_surface_close(wlr_xwayland_surface);
+}
+
+bool WlrXWaylandSurface::get_maximized() const {
+	bool maximized = wlr_xwayland_surface->maximized_vert && wlr_xwayland_surface->maximized_horz;
+	return maximized;
+}
+
+bool WlrXWaylandSurface::get_fullscreen() const {
+	return wlr_xwayland_surface->fullscreen;
+}
+
+/*
+bool WlrXdgToplevelWlr_Xwayland_Surface::get_resizing() const {
+	return wlr_xwayland_surface->resizing;
+}
+*/
+
+// XWayland doesn't seem to have an "activated" field, so we use this as a hack
+// EDIT: Actually, we can't use this hack since we don't have access to xwm.h
+/*
+bool WlrXWaylandSurface::get_activated() const {
+  return (wlr_xwayland_surface->xwm->focus_surface == wlr_xwayland_surface);
+}
+*/
+
+/*
+bool WlrXWaylandSurface::get_tiled() const {
+	return wlr_xwayland_surface->tiled;
+}
+*/
+
+uint32_t WlrXWaylandSurface::get_width() const {
+	return wlr_xwayland_surface->width;
+}
+
+uint32_t WlrXWaylandSurface::get_height() const {
+	return wlr_xwayland_surface->height;
+}
+
+uint32_t WlrXWaylandSurface::get_min_width() const {
+  return wlr_xwayland_surface->size_hints->min_width;
+}
+
+uint32_t WlrXWaylandSurface::get_min_height() const {
+  return wlr_xwayland_surface->size_hints->min_height;
+}
+
+uint32_t WlrXWaylandSurface::get_max_width() const {
+	return wlr_xwayland_surface->size_hints->max_width;
+}
+
+uint32_t WlrXWaylandSurface::get_max_height() const {
+	return wlr_xwayland_surface->size_hints->max_height;
+}
+}
+
+// void WlrXdgSurface::_bind_methods() {
+
+
 // }
 
 void WlrXWaylandSurface::_bind_methods() {
-// 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXdgToplevel::get_parent);
-// 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXdgToplevel::get_title);
-// 	ClassDB::bind_method(D_METHOD("get_app_id"), &WlrXdgToplevel::get_app_id);
-// 	ClassDB::bind_method(D_METHOD("set_size", "size"),
-// 			&WlrXdgToplevel::set_size);
-// 	ClassDB::bind_method(D_METHOD("set_activated", "activated"),
-// 			&WlrXdgToplevel::set_activated);
+
+  // 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXWaylandSurface::get_role);
+
+  	ClassDB::bind_method(D_METHOD("get_geometry"),
+  			&WlrXWaylandSurface::get_geometry);
+  	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
+  			&WlrXWaylandSurface::get_wlr_surface);
+
+  // 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
+  // 			&WlrXWaylandSurface::for_each_surface);
+
+  	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
+  			&WlrXWaylandSurface::surface_at);
+
+  // 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
+  // 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
+  // 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
+
+	ClassDB::bind_method(D_METHOD("get_fullscreen"),
+			&WlrXWaylandSurface::get_fullscreen);
+	// ClassDB::bind_method(D_METHOD("get_resizing"),
+	// 		&WlrXWaylandSurface::get_resizing);
+	// ClassDB::bind_method(D_METHOD("get_activated"),
+	// 		&WlrXWaylandSurface::get_activated);
+	// ClassDB::bind_method(D_METHOD("get_tiled"),
+	// 		&WlrXWaylandSurface::get_tiled);
+	ClassDB::bind_method(D_METHOD("get_width"),
+			&WlrXWaylandSurface::get_width);
+	ClassDB::bind_method(D_METHOD("get_height"),
+			&WlrXWaylandSurface::get_height);
+	ClassDB::bind_method(D_METHOD("get_min_width"),
+			&WlrXWaylandSurface::get_min_width);
+	ClassDB::bind_method(D_METHOD("get_min_height"),
+			&WlrXWaylandSurface::get_min_height);
+	ClassDB::bind_method(D_METHOD("get_max_width"),
+			&WlrXWaylandSurface::get_max_width);
+	ClassDB::bind_method(D_METHOD("get_max_height"),
+			&WlrXWaylandSurface::get_max_height);
+
+
+	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXWaylandSurface::get_parent);
+	ClassDB::bind_method(D_METHOD("get_title"), &WlrXWaylandSurface::get_title);
+// 	ClassDB::bind_method(D_METHOD("get_app_id"), &WlrXWaylandSurface::get_app_id);
+	ClassDB::bind_method(D_METHOD("set_size", "size"),
+			&WlrXWaylandSurface::set_size);
+	ClassDB::bind_method(D_METHOD("set_activated", "activated"),
+			&WlrXWaylandSurface::set_activated);
 	ClassDB::bind_method(D_METHOD("get_maximized"),
                        &WlrXWaylandSurface::get_maximized);
 	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"),
 			&WlrXWaylandSurface::set_maximized);
-// 	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"),
-// 			&WlrXdgToplevel::set_fullscreen);
+	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"),
+			&WlrXWaylandSurface::set_fullscreen);
 // 	ClassDB::bind_method(D_METHOD("set_resizing", "resizing"),
-// 			&WlrXdgToplevel::set_resizing);
+// 			&WlrXWaylandSurface::set_resizing);
 // 	ClassDB::bind_method(D_METHOD("set_tiled", "tiled"),
-// 			&WlrXdgToplevel::set_tiled);
-// 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXdgToplevel::send_close);
+// 			&WlrXWaylandSurface::set_tiled);
+	ClassDB::bind_method(D_METHOD("send_close"), &WlrXWaylandSurface::send_close);
 
 	ADD_SIGNAL(MethodInfo("request_maximize",
 			PropertyInfo(Variant::OBJECT,
@@ -367,152 +462,42 @@ void WlrXWaylandSurface::_bind_methods() {
                                               "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 
 
-// 	ADD_SIGNAL(MethodInfo("request_fullscreen",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
-// 			PropertyInfo(Variant::BOOL, "fullscreen")));
-// 	ADD_SIGNAL(MethodInfo("request_minimize",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
-// 	ADD_SIGNAL(MethodInfo("request_move",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
-// 			PropertyInfo(Variant::INT, "serial")));
-// 	ADD_SIGNAL(MethodInfo("request_resize",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
-// 			PropertyInfo(Variant::INT, "serial"),
-// 			PropertyInfo(Variant::INT, "edges")));
-// 	ADD_SIGNAL(MethodInfo("request_show_window_menu",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel"),
-// 			PropertyInfo(Variant::INT, "serial"),
-// 			PropertyInfo(Variant::INT, "x"),
-// 			PropertyInfo(Variant::INT, "y")));
-// 	ADD_SIGNAL(MethodInfo("set_app_id",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
-// 	ADD_SIGNAL(MethodInfo("set_title",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
-// 	ADD_SIGNAL(MethodInfo("set_parent",
-// 			PropertyInfo(Variant::OBJECT,
-// 				"xdg_toplevel", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgToplevel")));
+	ADD_SIGNAL(MethodInfo("request_fullscreen",
+			PropertyInfo(Variant::OBJECT,
+				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"),
+			PropertyInfo(Variant::BOOL, "fullscreen")));
+
+  //Xwayland doesn't seem to support the minimize event.
+	// ADD_SIGNAL(MethodInfo("request_minimize",
+	// 		PropertyInfo(Variant::OBJECT,
+	// 			"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+
+  //We remove the serial argument from the request_move signal.
+	ADD_SIGNAL(MethodInfo("request_move",
+			PropertyInfo(Variant::OBJECT,
+				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")
+    //PropertyInfo(Variant::INT, "serial")
+                        ));
+
+	ADD_SIGNAL(MethodInfo("request_resize",
+			PropertyInfo(Variant::OBJECT,
+				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"),
+			// PropertyInfo(Variant::INT, "serial"), //We remove the serial argument in XWayland
+			PropertyInfo(Variant::INT, "edges")));
+	// ADD_SIGNAL(MethodInfo("request_show_window_menu",
+	// 		PropertyInfo(Variant::OBJECT,
+	// 			"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"),
+	// 		PropertyInfo(Variant::INT, "serial"),
+	// 		PropertyInfo(Variant::INT, "x"),
+	// 		PropertyInfo(Variant::INT, "y")));
+
+	// ADD_SIGNAL(MethodInfo("set_app_id",
+	// 		PropertyInfo(Variant::OBJECT,
+	// 			"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("set_title",
+			PropertyInfo(Variant::OBJECT,
+				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("set_parent",
+			PropertyInfo(Variant::OBJECT,
+				"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 }
-
-bool WlrXWaylandSurface::get_maximized() const {
-	bool maximized = wlr_xwayland_surface->maximized_vert && wlr_xwayland_surface->maximized_horz;
-	return maximized;
-}
-
-// bool WlrXdgToplevelState::get_fullscreen() const {
-// 	return state->fullscreen;
-// }
-
-// bool WlrXdgToplevelState::get_resizing() const {
-// 	return state->resizing;
-// }
-
-// bool WlrXdgToplevelState::get_activated() const {
-// 	return state->activated;
-// }
-
-// bool WlrXdgToplevelState::get_tiled() const {
-// 	return state->tiled;
-// }
-
-// uint32_t WlrXdgToplevelState::get_width() const {
-// 	return state->width;
-// }
-
-// uint32_t WlrXdgToplevelState::get_height() const {
-// 	return state->height;
-// }
-
-// uint32_t WlrXdgToplevelState::get_min_width() const {
-// 	return state->min_width;
-// }
-
-// uint32_t WlrXdgToplevelState::get_min_height() const {
-// 	return state->min_height;
-// }
-
-// uint32_t WlrXdgToplevelState::get_max_width() const {
-// 	return state->max_width;
-// }
-
-// uint32_t WlrXdgToplevelState::get_max_height() const {
-// 	return state->max_height;
-// }
-
-// WlrXdgToplevelState::WlrXdgToplevelState() {
-// 	/* Not used */
-// }
-
-// void WlrXWaylandSurface::_bind_methods() {
-	// ClassDB::bind_method(D_METHOD("get_fullscreen"),
-	// 		&WlrXdgToplevelState::get_fullscreen);
-	// ClassDB::bind_method(D_METHOD("get_resizing"),
-	// 		&WlrXdgToplevelState::get_resizing);
-	// ClassDB::bind_method(D_METHOD("get_activated"),
-	// 		&WlrXdgToplevelState::get_activated);
-	// ClassDB::bind_method(D_METHOD("get_tiled"),
-	// 		&WlrXdgToplevelState::get_tiled);
-	// ClassDB::bind_method(D_METHOD("get_width"),
-	// 		&WlrXdgToplevelState::get_width);
-	// ClassDB::bind_method(D_METHOD("get_height"),
-	// 		&WlrXdgToplevelState::get_height);
-	// ClassDB::bind_method(D_METHOD("get_min_width"),
-	// 		&WlrXdgToplevelState::get_min_width);
-	// ClassDB::bind_method(D_METHOD("get_min_height"),
-	// 		&WlrXdgToplevelState::get_min_height);
-	// ClassDB::bind_method(D_METHOD("get_max_width"),
-	// 		&WlrXdgToplevelState::get_max_width);
-	// ClassDB::bind_method(D_METHOD("get_max_height"),
-	// 		&WlrXdgToplevelState::get_max_height);
-// }
-
-// WlrXdgPopup::WlrXdgPopup() {
-// 	/* Not used */
-// }
-
-// WlrXdgPopup::WlrXdgPopup(struct wlr_xdg_popup *xdg_popup) {
-// 	wlr_xdg_popup = xdg_popup;
-// 	// TOOD: Bind listeners
-// }
-
-// WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
-// 	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_popup->base->data;
-// 	if (surface->popup) {
-// 		return surface->popup;
-// 	}
-// 	return new WlrXdgPopup(xdg_popup);
-// }
-
-// void WlrXdgPopup::_bind_methods() {
-// 	// TODO: bind classdb
-//}
-}
-
-// void WlrXdgSurface::_bind_methods() {
-// 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
-// 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
-// 			&WlrXdgSurface::get_xdg_toplevel);
-// 	ClassDB::bind_method(D_METHOD("get_xdg_popup"),
-// 			&WlrXdgSurface::get_xdg_popup);
-// 	ClassDB::bind_method(D_METHOD("get_geometry"),
-// 			&WlrXdgSurface::get_geometry);
-// 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
-// 			&WlrXdgSurface::get_wlr_surface);
-// 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
-// 			&WlrXdgSurface::for_each_surface);
-// 	ClassDB::bind_method(D_METHOD("for_each_surface_ffi", "func"),
-//       &WlrXdgSurface::for_each_surface);
-// 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
-// 			&WlrXdgSurface::surface_at);
-
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
-// 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_POPUP);
-
-// }

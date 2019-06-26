@@ -7,8 +7,11 @@
 #include "wayland_global.h"
 #include "wlr_surface.h"
 #include "wlr_compositor.h"
+//#include "xwayland/xwm.h" We are unable to access this :(
 extern "C" {
 #include <wayland-server.h>
+
+//We override xwayland.h to avoid the `class` keyword
 //#include <wlr/xwayland.h>
 #include "xwayland.h"
 }
@@ -20,26 +23,26 @@ class WlrXWaylandSurface: public Resource {
 
 	static void handle_request_maximize(
 			struct wl_listener *listener, void *data);
-	/* static void handle_request_fullscreen( */
-	/* 		struct wl_listener *listener, void *data); */
-	/* static void handle_request_minimize(struct wl_listener *listener, void *data); */
-	/* static void handle_request_move(struct wl_listener *listener, void *data); */
-	/* static void handle_request_resize(struct wl_listener *listener, void *data); */
-	/* static void handle_request_show_window_menu( */
-	/* 		struct wl_listener *listener, void *data); */
-	/* static void handle_set_parent(struct wl_listener *listener, void *data); */
-	/* static void handle_set_title(struct wl_listener *listener, void *data); */
-	/* static void handle_set_app_id(struct wl_listener *listener, void *data); */
+	static void handle_request_fullscreen(
+			struct wl_listener *listener, void *data);
+	static void handle_request_minimize(struct wl_listener *listener, void *data);
+	static void handle_request_move(struct wl_listener *listener, void *data);
+	static void handle_request_resize(struct wl_listener *listener, void *data);
+	//static void handle_request_show_window_menu( // We elminate this event/signal in xwayland
+  //    struct wl_listener *listener, void *data); //"
+	static void handle_set_parent(struct wl_listener *listener, void *data);
+	static void handle_set_title(struct wl_listener *listener, void *data);
+	static void handle_set_app_id(struct wl_listener *listener, void *data);
 
 	struct wl_listener request_maximize;
-	/* struct wl_listener request_fullscreen; */
-	/* struct wl_listener request_minimize; */
-	/* struct wl_listener request_move; */
-	/* struct wl_listener request_resize; */
-	/* struct wl_listener request_show_window_menu; */
-	/* struct wl_listener set_parent; */
-	/* struct wl_listener set_title; */
-	/* struct wl_listener set_app_id; */
+	struct wl_listener request_fullscreen;
+	struct wl_listener request_minimize;
+	struct wl_listener request_move;
+	struct wl_listener request_resize;
+	struct wl_listener request_show_window_menu;
+	struct wl_listener set_parent;
+	struct wl_listener set_title;
+	struct wl_listener set_app_id;
 
 	struct wl_listener destroy;
 	struct wl_listener map;
@@ -63,48 +66,43 @@ class WlrXWaylandSurface: public Resource {
   /*                   TILING_EDGE_RIGHT = 8, */
 	/* }; */
 
-
 	bool get_maximized() const;
-	/* bool get_fullscreen() const; */
-	/* bool get_resizing() const; */
-	/* bool get_activated() const; */
-	/* bool get_tiled() const; */
-	/* uint32_t get_width() const; */
-	/* uint32_t get_height() const; */
-	/* uint32_t get_min_width() const; */
-	/* uint32_t get_min_height() const; */
-	/* uint32_t get_max_width() const; */
-	/* uint32_t get_max_height() const; */
+	bool get_fullscreen() const;
+	bool get_resizing() const;
+	bool get_activated() const;
+	bool get_tiled() const;
+	uint32_t get_width() const;
+	uint32_t get_height() const;
+	uint32_t get_min_width() const;
+	uint32_t get_min_height() const;
+	uint32_t get_max_width() const;
+	uint32_t get_max_height() const;
 
-	/* WlrXdgToplevelState *get_client_pending_state() const; */
-	/* WlrXdgToplevelState *get_server_pending_state() const; */
-	/* WlrXdgToplevelState *get_current_state() const; */
-	/* WlrXdgToplevel *get_parent() const; */
-	/* String get_title() const; */
+	/* WlrXWaylandSurface *get_client_pending_state() const; */
+	/* WlrXWaylandSurface *get_server_pending_state() const; */
+	/* WlrXWaylandSurface *get_current_state() const; */
+	WlrXWaylandSurface *get_parent() const;
+	String get_title() const;
 	/* String get_app_id() const; */
 
-	/* void set_size(Vector2 size); */
-	/* void set_activated(bool activated); */
+	void set_size(Vector2 size);
+	void set_activated(bool activated);
 	void set_maximized(bool maximized);
-	/* void set_fullscreen(bool fullscreen); */
+	void set_fullscreen(bool fullscreen);
 	/* void set_resizing(bool resizing); */
 	/* void set_tiled(bool tiled); */
-	/* void send_close(); */
+	void send_close();
 
 
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
 	void for_each_surface(Variant func);
-	/* void for_each_surface_ffi(void * func); */
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
 };
 
 class WlrXWayland: public WaylandGlobal {
  private:
 	GDCLASS(WlrXWayland, Node);
-  /* friend class WlrCompositor; */
-
-  /* WlrCompositor *compositor = NULL; */
 
 	struct wlr_xwayland *wlr_xwayland;
   /* WaylandDisplay *waylandDisplay = NULL; */ //we already have this via WaylandGlobal
