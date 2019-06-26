@@ -9,6 +9,7 @@
 #include "wlr_seat.h"
 #include "wlr_surface.h"
 #include "wlr_xdg_shell.h"
+#include "wlr_xwayland.h"
 
 void register_gdwlroots_types() {
 	ClassDB::register_class<WaylandDisplay>();
@@ -26,6 +27,8 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WlrXdgToplevel>();
 	ClassDB::register_class<WlrXdgToplevelState>();
 	ClassDB::register_class<WlrXdgPopup>();
+	ClassDB::register_class<WlrXWayland>();
+	ClassDB::register_class<WlrXWaylandSurface>();
 }
 
 void unregister_gdwlroots_types() {

@@ -33,7 +33,8 @@ void WlrXWayland::_bind_methods() {
 					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 }
 
-void WlrXWayland::start_xwayland(WlrCompositor * compositor) {
+void WlrXWayland::start_xwayland(Variant _compositor) {
+	auto compositor = dynamic_cast<WlrCompositor *>((Node *)_compositor);
 	if (wlr_xwayland) {
     std::cout << "Xwayland is already started." << std::endl;
 		return;
@@ -43,7 +44,7 @@ void WlrXWayland::start_xwayland(WlrCompositor * compositor) {
   struct wl_display * wl_display = get_wayland_display()->get_wayland_display();
 
   if (wl_display && wlr_compositor) {
-    wlr_xwayland = wlr_xwayland_create(wl_display, wlr_compositor, true); //`true` forces XWayland to start in lazy mode
+    wlr_xwayland = wlr_xwayland_create(wl_display, wlr_compositor, false); //`true` forces XWayland to start in lazy mode
 
     new_xwayland_surface.notify = handle_new_xwayland_surface;
 		wl_signal_add(&wlr_xwayland->events.new_surface,
@@ -393,6 +394,8 @@ uint32_t WlrXWaylandSurface::get_max_height() const {
 void WlrXWaylandSurface::_bind_methods() {
 
   // 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXWaylandSurface::get_role);
+	  ClassDB::bind_method(D_METHOD("start_xwayland", "compositor"),
+                       &WlrXWayland::start_xwayland);
 
   	ClassDB::bind_method(D_METHOD("get_geometry"),
   			&WlrXWaylandSurface::get_geometry);
@@ -429,7 +432,6 @@ void WlrXWaylandSurface::_bind_methods() {
 			&WlrXWaylandSurface::get_max_width);
 	ClassDB::bind_method(D_METHOD("get_max_height"),
 			&WlrXWaylandSurface::get_max_height);
-
 
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXWaylandSurface::get_parent);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXWaylandSurface::get_title);

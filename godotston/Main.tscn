@@ -28,6 +28,8 @@ editor/display_folded = true
 
 [node name="WlrXdgShell" type="WlrXdgShell" parent="WaylandDisplay"]
 
+[node name="WlrXWayland" type="WlrXWayland" parent="WaylandDisplay"]
+
 [node name="WlrSeat" type="WlrSeat" parent="WaylandDisplay"]
 capabilities = 3
 
@@ -49,3 +51,4 @@ shape = SubResource( 4 )
 
 [connection signal="ready" from="WaylandDisplay" to="." method="_on_WaylandDisplay_ready"]
 [connection signal="new_surface" from="WaylandDisplay/WlrXdgShell" to="." method="_on_WlrXdgShell_new_surface"]
+[connection signal="new_surface" from="WaylandDisplay/WlrXWayland" to="." method="_on_WlrXWayland_new_surface"]

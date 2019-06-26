@@ -1,6 +1,7 @@
 extends Node
 
 var Surface = load("res://Surface.tscn")
+var XWaylandSurface = load("res://XWaylandSurface.tscn")
 
 func _on_WaylandDisplay_ready():
 	var display = get_node("WaylandDisplay")
@@ -12,14 +13,33 @@ func handle_map_surface(surface):
 	surface.focus()
 	add_child(surface)
 
+# New
+func handle_map_xwayland_surface(xwayland_surface):
+	var vp = get_viewport().size
+	xwayland_surface.position = Vector2(vp.x / 2, -xwayland_surface.get_size().y)
+	xwayland_surface.focus()
+	add_child(xwayland_surface)
+
 func handle_unmap_surface(surface):
 	remove_child(surface)
+
+# New
+func handle_unmap_xwayland_surface(xwayland_surface):
+	remove_child(xwayland_surface)
 
 func _on_WlrXdgShell_new_surface(xdg_surface):
 	if xdg_surface.get_role() != WlrXdgSurface.XDG_SURFACE_ROLE_TOPLEVEL:
 		return
 	var surface = Surface.instance()
 	surface.xdg_surface = xdg_surface
+	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
+	surface.connect("map", self, "handle_map_surface")
+	surface.connect("unmap", self, "handle_unmap_surface")
+
+# New
+func _on_WlrXWayland_new_surface(xwayland_surface):
+	var surface = XWaylandSurface.instance()
+	surface.xwayland_surface = xwayland_surface
 	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
 	surface.connect("map", self, "handle_map_surface")
 	surface.connect("unmap", self, "handle_unmap_surface")
@@ -44,3 +64,10 @@ func _ready():
 	seat.set_keyboard(keyboard)
 	keyboard.connect("key", self, "_on_wlr_key")
 	keyboard.connect("modifiers", self, "_on_wlr_modifiers")
+	var compositor = get_node("WaylandDisplay/WlrBackend/WlrCompositor")
+	print_tree()
+	var xwayland = get_node("WaylandDisplay/WlrXWayland")
+	xwayland.start_xwayland(compositor)
+
+	# [node name="WlrXWayland" type="WlrXWayland" parent="WaylandDisplay"]
+	# [connection signal="new_surface" from="WaylandDisplay/WlrXWayland" to="." method="_on_WlrXWayland_new_surface"]

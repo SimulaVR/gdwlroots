@@ -1,5 +1,5 @@
-#ifndef GDWLR_WLR_XDG_SHELL_H
-#define GDWLR_WLR_XDG_SHELL_H
+#ifndef GDWLR_WLR_XWAYLAND_SURFACE_H
+#define GDWLR_WLR_XWAYLAND_SURFACE_H
 #include "core/func_ref.h"
 #include "renderer.h"
 #include "scene/main/node.h"
@@ -117,7 +117,7 @@ class WlrXWayland: public WaylandGlobal {
  protected:
 	static void _bind_methods();
  public:
-  void start_xwayland(WlrCompositor * compositor);
+  void start_xwayland(Variant _compositor);
 	WlrXWayland(WlrCompositor * WlrCompositor);
 	WlrXWayland(); //Probably don't need a variant of this with a wlr_xdg_shell because we construct one on the fly (unlike with WlrXwaylandSurface)
 	~WlrXWayland();
