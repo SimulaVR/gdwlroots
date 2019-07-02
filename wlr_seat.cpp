@@ -162,6 +162,11 @@ uint32_t WlrSeat::get_capabilities() const {
 	return capabilities;
 }
 
+
+struct wlr_seat * WlrSeat::get_wlr_seat() const {
+	return wlr_seat;
+}
+
 void WlrSeat::set_capabilities(uint32_t caps) {
 	uint32_t wlr_capabilities = 0;
 	if ((caps & SEAT_CAPABILITY_POINTER)) {

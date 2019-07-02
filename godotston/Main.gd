@@ -38,11 +38,12 @@ func _on_WlrXdgShell_new_surface(xdg_surface):
 
 # New
 func _on_WlrXWayland_new_surface(xwayland_surface):
-	var surface = XWaylandSurface.instance()
-	surface.xwayland_surface = xwayland_surface
-	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
-	surface.connect("map", self, "handle_map_surface")
-	surface.connect("unmap", self, "handle_unmap_surface")
+	print("_on_WlrXWayland_new_surface")
+	# var surface = XWaylandSurface.instance()
+	# surface.xwayland_surface = xwayland_surface
+	# surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
+	# surface.connect("map", self, "handle_map_surface")
+	# surface.connect("unmap", self, "handle_unmap_surface")
 
 func _on_viewport_change():
 	var vp = get_viewport().size
@@ -67,7 +68,9 @@ func _ready():
 	var compositor = get_node("WaylandDisplay/WlrBackend/WlrCompositor")
 	print_tree()
 	var xwayland = get_node("WaylandDisplay/WlrXWayland")
-	xwayland.start_xwayland(compositor)
+	xwayland.start_xwayland(compositor, seat)
+	xwayland.connect ("new_surface", self, "_on_WlrXWayland_new_surface")
+	print("After start_xwayland")
 
 	# [node name="WlrXWayland" type="WlrXWayland" parent="WaylandDisplay"]
 	# [connection signal="new_surface" from="WaylandDisplay/WlrXWayland" to="." method="_on_WlrXWayland_new_surface"]

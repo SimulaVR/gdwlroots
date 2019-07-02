@@ -54,6 +54,8 @@ public:
 
 	bool validate_grab_serial(uint32_t serial);
 
+  struct wlr_seat * get_wlr_seat() const;
+
 	WlrSeat();
 	~WlrSeat();
 };

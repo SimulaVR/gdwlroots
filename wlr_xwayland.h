@@ -7,6 +7,7 @@
 #include "wayland_global.h"
 #include "wlr_surface.h"
 #include "wlr_compositor.h"
+#include "wlr_seat.h"
 //#include "xwayland/xwm.h" We are unable to access this :(
 extern "C" {
 #include <wayland-server.h>
@@ -117,7 +118,7 @@ class WlrXWayland: public WaylandGlobal {
  protected:
 	static void _bind_methods();
  public:
-  void start_xwayland(Variant _compositor);
+  void start_xwayland(Variant _compositor, Variant _seat);
 	WlrXWayland(WlrCompositor * WlrCompositor);
 	WlrXWayland(); //Probably don't need a variant of this with a wlr_xdg_shell because we construct one on the fly (unlike with WlrXwaylandSurface)
 	~WlrXWayland();

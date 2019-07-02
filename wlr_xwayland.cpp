@@ -6,18 +6,29 @@
 #include "wlr_surface.h"
 #include "wlr_xwayland.h"
 #include "wlr_compositor.h"
+#include "wlr_seat.h"
+#include <unistd.h>
+
 //#include "xwayland/xwm.h" We are unable to access this :(
 #include <iostream>
 
 extern "C" {
+#include <signal.h>
 #include <wayland-server.h>
 
 //We override xwayland.h to avoid the `class` keyword
 //#include <wlr/xwayland.h>
 #include "xwayland.h"
 
+void signal_callback_handler(int signum) {
+  printf("Caught signal from gdwlroots: %d\n",signum);
+  signal(SIGUSR1, SIG_IGN);
+  //exit(signum);
+}
+
 void WlrXWayland::handle_new_xwayland_surface(
 		struct wl_listener *listener, void *data) {
+  std::cout << "handle_new_xwayland_surface called" << std::endl;
   WlrXWayland *xwayland = wl_container_of(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
@@ -30,29 +41,59 @@ void WlrXWayland::handle_new_xwayland_surface(
 void WlrXWayland::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("new_surface",
 				PropertyInfo(Variant::OBJECT,
-					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+					"xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 }
 
-void WlrXWayland::start_xwayland(Variant _compositor) {
+void WlrXWayland::start_xwayland(Variant _compositor, Variant _seat) {
+  std::cout << "WlrXWayland::start_xwayland" << std::endl;
+  pid_t ppid;
+  ppid = getppid();
+  std::cout << "gdwlroots ppid: " << ppid << std::endl;
 	auto compositor = dynamic_cast<WlrCompositor *>((Node *)_compositor);
+	auto seat = dynamic_cast<WlrSeat *>((Node *)_seat);
+  struct wlr_seat * w_seat = seat->get_wlr_seat();
+
 	if (wlr_xwayland) {
     std::cout << "Xwayland is already started." << std::endl;
 		return;
 	}
 
+  signal(SIGUSR1, SIG_IGN); //<- Here
+  //signal(SIGUSR1, signal_callback_handler); //Possibly useful if SIG_IGN isn't the right approach
   struct wlr_compositor * wlr_compositor = compositor->get_wlr_compositor();
   struct wl_display * wl_display = get_wayland_display()->get_wayland_display();
 
   if (wl_display && wlr_compositor) {
     wlr_xwayland = wlr_xwayland_create(wl_display, wlr_compositor, false); //`true` forces XWayland to start in lazy mode
 
+    //Duplicated by xwayland_start_display()? But also done in rootston/desktop.c?
+    // char display_name[16];
+    // snprintf(display_name, sizeof(display_name), ":%d", wlr_xwayland->display);
+    // setenv("DISPLAY", display_name, true); //in newest wlroots we can just use wlr_xwayland->display_name
+
+
+		wlr_xwayland_set_seat(wlr_xwayland, w_seat);
+
     new_xwayland_surface.notify = handle_new_xwayland_surface;
 		wl_signal_add(&wlr_xwayland->events.new_surface,
                   &new_xwayland_surface
                   );
 
+    //We omit xcursor stuff here
+		// if (wlr_xcursor_manager_load(desktop->xcursor_manager, 1)) {
+		// 	wlr_log(WLR_ERROR, "Cannot load XWayland XCursor theme");
+		// }
+		// struct wlr_xcursor *xcursor = wlr_xcursor_manager_get_xcursor(
+    //                                                               desktop->xcursor_manager, cursor_default, 1);
+		// if (xcursor != NULL) {
+		// 	struct wlr_xcursor_image *image = xcursor->images[0];
+		// 	wlr_xwayland_set_cursor(desktop->xwayland, image->buffer,
+    //                           image->width * 4, image->width, image->height, image->hotspot_x,
+    //                           image->hotspot_y);
+		// }
+
     //Things we omit from XWayland initialization:
-    //1. Adjusting DISPLAY environment variable
+    //1. Adjusting DISPLAY environment variable\
     //2. xcursor stuff
     //See i.e. https://github.com/swaywm/wlroots/blob/b3f42548d068996995490585e27e16c191b4a64c/rootston/desktop.c#L358
 
@@ -62,11 +103,14 @@ void WlrXWayland::start_xwayland(Variant _compositor) {
 }
 
 void WlrXWayland::ensure_wl_global(WaylandDisplay *display) {
+  std::cout << "WlrXWayland::ensure_wl_global(..)" << std::endl;
+
   //This function (automatically called by WaylandGlobal) intentionally left blank.
   // We use start_xwayland (called from GDScript/godot-haskell) instead so we can gain access to a WlrCompositor
 }
 
 void WlrXWayland::destroy_wl_global(WaylandDisplay *display) {
+  std::cout << "WlrXWayland::destroy_wl_global(..)" << std::endl;
 	wlr_xwayland_destroy(wlr_xwayland);
 	wlr_xwayland = NULL;
 }
@@ -91,22 +135,20 @@ WlrSurface *WlrXWaylandSurface::get_wlr_surface() const {
 	return WlrSurface::from_wlr_surface(wlr_xwayland_surface->surface);
 }
 
-extern "C" {
-
-static void for_each_surface_iter(struct wlr_surface *surface,
-		int sx, int sy, void *data) {
-	FuncRef *func = (FuncRef *)data;
-	const Variant *args[] = {
-		new Variant(WlrSurface::from_wlr_surface(surface)),
-		new Variant(sx),
-		new Variant(sy),
-	};
-	Variant::CallError error;
-	func->call_func((const Variant **)&args[0], 3, error);
-	if (error.error != Variant::CallError::Error::CALL_OK) {
-		printf("call error %d\n", error.error);
-	}
-}
+// static void for_each_surface_iter(struct wlr_surface *surface,
+// 		int sx, int sy, void *data) {
+// 	FuncRef *func = (FuncRef *)data;
+// 	const Variant *args[] = {
+// 		new Variant(WlrSurface::from_wlr_surface(surface)),
+// 		new Variant(sx),
+// 		new Variant(sy),
+// 	};
+// 	Variant::CallError error;
+// 	func->call_func((const Variant **)&args[0], 3, error);
+// 	if (error.error != Variant::CallError::Error::CALL_OK) {
+// 		printf("call error %d\n", error.error);
+// 	}
+// }
 
 //We omit implementing this due to lack of clearly usable `*xwayland_children_for_each_surface`:
 /*
@@ -249,6 +291,8 @@ WlrXWaylandSurface::WlrXWaylandSurface() {
 }
 
 WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_surface) {
+    std::cout << "WlrXWaylandSurface(..) constructor called." << std::endl;
+    
   	destroy.notify = handle_destroy;
   	wl_signal_add(&xwayland_surface->events.destroy, &destroy);
   	map.notify = handle_map;
@@ -384,7 +428,6 @@ uint32_t WlrXWaylandSurface::get_max_width() const {
 uint32_t WlrXWaylandSurface::get_max_height() const {
 	return wlr_xwayland_surface->size_hints->max_height;
 }
-}
 
 // void WlrXdgSurface::_bind_methods() {
 
@@ -394,7 +437,7 @@ uint32_t WlrXWaylandSurface::get_max_height() const {
 void WlrXWaylandSurface::_bind_methods() {
 
   // 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXWaylandSurface::get_role);
-	  ClassDB::bind_method(D_METHOD("start_xwayland", "compositor"),
+  ClassDB::bind_method(D_METHOD("start_xwayland", "compositor", "seat"),
                        &WlrXWayland::start_xwayland);
 
   	ClassDB::bind_method(D_METHOD("get_geometry"),
