@@ -58,7 +58,7 @@ void WlrXWayland::start_xwayland(Variant _compositor, Variant _seat) {
 		return;
 	}
 
-  signal(SIGUSR1, SIG_IGN); //<- Here
+//  signal(SIGUSR1, SIG_IGN); //<- Here
   //signal(SIGUSR1, signal_callback_handler); //Possibly useful if SIG_IGN isn't the right approach
   struct wlr_compositor * wlr_compositor = compositor->get_wlr_compositor();
   struct wl_display * wl_display = get_wayland_display()->get_wayland_display();
