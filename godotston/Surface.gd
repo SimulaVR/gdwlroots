@@ -34,6 +34,7 @@ func _handle_destroy(xdg_surface):
 	set_process(false)
 	
 func _handle_map(xdg_surface):
+	print("Surface.gd:_handle_map")
 	set_process(true)
 	set_process_input(true)
 	emit_signal("map", self)

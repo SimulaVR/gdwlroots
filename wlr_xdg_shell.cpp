@@ -5,6 +5,7 @@
 #include "wayland_display.h"
 #include "wlr_surface.h"
 #include "wlr_xdg_shell.h"
+#include <iostream>
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -16,6 +17,7 @@ void WlrXdgShell::handle_new_xdg_surface(
 	auto surface = WlrXdgSurface::from_wlr_xdg_surface(
 			(struct wlr_xdg_surface *)data);
 	xdg_shell->emit_signal("new_surface", surface);
+  std::cout << "WlrXdgSurface::new_surface(..) called w/surface: " << surface << std::endl;
 }
 
 }
@@ -177,6 +179,7 @@ void WlrXdgSurface::handle_map(
 	WlrXdgSurface *xdg_surface = wl_container_of(
 			listener, xdg_surface, map);
 	xdg_surface->emit_signal("map", xdg_surface);
+  std::cout << "WlrXdgSurface::handle_map(..) called w/xdg_surface: " << xdg_surface << std::endl;
 }
 
 void WlrXdgSurface::handle_unmap(

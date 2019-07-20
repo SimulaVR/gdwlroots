@@ -28,12 +28,12 @@ void signal_callback_handler(int signum) {
 
 void WlrXWayland::handle_new_xwayland_surface(
 		struct wl_listener *listener, void *data) {
-  std::cout << "handle_new_xwayland_surface called" << std::endl;
   WlrXWayland *xwayland = wl_container_of(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
       (struct wlr_xwayland_surface *)data);
 	xwayland->emit_signal("new_surface", surface);
+  std::cout << "handle_new_xwayland_surface called for surface: " << surface << std::endl;
 }
 
 }
@@ -178,6 +178,7 @@ void WlrXWaylandSurface::handle_map(
 	WlrXWaylandSurface *xwayland_surface = wl_container_of(
 			listener, xwayland_surface, map);
 	xwayland_surface->emit_signal("map", xwayland_surface);
+  std::cout << "WlrXWaylandSurface::handle_map(..) called w/xwayland_surface: " << xwayland_surface << std::endl;
 }
 
 void WlrXWaylandSurface::handle_unmap(

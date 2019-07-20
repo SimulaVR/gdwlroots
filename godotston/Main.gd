@@ -8,6 +8,7 @@ func _on_WaylandDisplay_ready():
 	display.run()
 
 func handle_map_surface(surface):
+	print("Main.gd:handle_map_surface()")
 	var vp = get_viewport().size
 	surface.position = Vector2(vp.x / 2, -surface.get_size().y)
 	surface.focus()
@@ -15,6 +16,7 @@ func handle_map_surface(surface):
 
 # New
 func handle_map_xwayland_surface(xwayland_surface):
+	print("Main.gd:handle_map_xwayland_surface()")
 	var vp = get_viewport().size
 	xwayland_surface.position = Vector2(vp.x / 2, -xwayland_surface.get_size().y)
 	xwayland_surface.focus()
@@ -28,6 +30,7 @@ func handle_unmap_xwayland_surface(xwayland_surface):
 	remove_child(xwayland_surface)
 
 func _on_WlrXdgShell_new_surface(xdg_surface):
+	print("Main.gd:_on_WlrXdgShell_new_surface()")
 	if xdg_surface.get_role() != WlrXdgSurface.XDG_SURFACE_ROLE_TOPLEVEL:
 		return
 	var surface = Surface.instance()
@@ -39,11 +42,11 @@ func _on_WlrXdgShell_new_surface(xdg_surface):
 # New
 func _on_WlrXWayland_new_surface(xwayland_surface):
 	print("_on_WlrXWayland_new_surface")
-	# var surface = XWaylandSurface.instance()
-	# surface.xwayland_surface = xwayland_surface
-	# surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
-	# surface.connect("map", self, "handle_map_surface")
-	# surface.connect("unmap", self, "handle_unmap_surface")
+	var surface = XWaylandSurface.instance()
+	surface.xwayland_surface = xwayland_surface
+	surface.set_seat(get_node("WaylandDisplay/WlrSeat"))
+	surface.connect("map", self, "handle_map_surface")
+	surface.connect("unmap", self, "handle_unmap_surface")
 
 func _on_viewport_change():
 	var vp = get_viewport().size

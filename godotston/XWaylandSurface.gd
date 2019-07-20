@@ -33,6 +33,7 @@ func _handle_destroy(xwayland_surface):
 	set_process(false)
 	
 func _handle_map(xwayland_surface):
+	print("XWaylandSurface.gd:_handle_map")
 	set_process(true)
 	set_process_input(true)
 	emit_signal("map", self)
@@ -57,7 +58,8 @@ func _xwayland_surface_set(val):
 
 func _draw():
   if xwayland_surface != null:
-	  var texture = xwayland_surface.get_texture()
+	  var surface = xwayland_surface.get_wlr_surface()
+	  var texture = surface.get_texture() #<- Line 61
 	  if texture == null:
 		  return
 	  var position = Vector2(0,0)
@@ -65,7 +67,7 @@ func _draw():
 	  #   (-xwayland_surface.get_buffer_width() / 2) + sx,
 	  #   (-xwayland_surface.get_buffer_height() / 2) + sy)
 	  draw_texture(texture, position)
-	  xwayland_surface.send_frame_done()
+	  surface.send_frame_done()
 
 func _process(delta):
 	var collisionShape = get_node("CollisionShape2D")
