@@ -100,3 +100,7 @@ WlrOutput::~WlrOutput() {
 	wlr_output_destroy(wlr_output);
 	wlr_output = NULL;
 }
+
+struct wlr_output *WlrOutput::get_wlr_output() const {
+	return wlr_output;
+}

@@ -7,6 +7,7 @@
 #include "wayland_global.h"
 #include "wlr_surface.h"
 #include "wlr_compositor.h"
+#include "wlr_output.h"
 #include "wlr_seat.h"
 //#include "xwayland/xwm.h" We are unable to access this :(
 extern "C" {
@@ -24,8 +25,7 @@ class WlrXWaylandSurface: public Resource {
 
 	static void handle_request_maximize(
 			struct wl_listener *listener, void *data);
-	static void handle_request_fullscreen(
-			struct wl_listener *listener, void *data);
+	static void handle_request_fullscreen(struct wl_listener *listener, void *data);
 	static void handle_request_minimize(struct wl_listener *listener, void *data);
 	static void handle_request_move(struct wl_listener *listener, void *data);
 	static void handle_request_resize(struct wl_listener *listener, void *data);
@@ -44,11 +44,13 @@ class WlrXWaylandSurface: public Resource {
 	struct wl_listener set_parent;
 	struct wl_listener set_title;
 	struct wl_listener set_app_id;
+	struct wl_listener surface_commit;
 
 	struct wl_listener destroy;
 	struct wl_listener map;
 	struct wl_listener unmap;
 
+	static void handle_surface_commit(struct wl_listener *listener, void *data);
 	static void handle_destroy(struct wl_listener *listener, void *data);
 	static void handle_map(struct wl_listener *listener, void *data);
 	static void handle_unmap(struct wl_listener *listener, void *data);
@@ -98,6 +100,7 @@ class WlrXWaylandSurface: public Resource {
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
 	void for_each_surface(Variant func);
+	void schedule_frame(Variant _output);
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
 };
 

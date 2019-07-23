@@ -27,6 +27,7 @@ protected:
 public:
 	WlrOutput();
 	~WlrOutput();
+  struct wlr_output *get_wlr_output() const;
 };
 
 #endif

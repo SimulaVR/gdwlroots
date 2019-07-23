@@ -6,6 +6,7 @@
 #include "wlr_surface.h"
 #include "wlr_xwayland.h"
 #include "wlr_compositor.h"
+#include "wlr_output.h"
 #include "wlr_seat.h"
 #include <unistd.h>
 
@@ -32,6 +33,10 @@ void WlrXWayland::handle_new_xwayland_surface(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
       (struct wlr_xwayland_surface *)data);
+
+  //struct wlr_xwayland_surface * w_xwayland_surface = (struct wlr_xwayland_surface *)data;
+  //wlr_xwayland_surface_ping(w_xwayland_surface); test
+
 	xwayland->emit_signal("new_surface", surface);
   std::cout << "handle_new_xwayland_surface called for surface: " << surface << std::endl;
 }
@@ -173,12 +178,32 @@ void WlrXWaylandSurface::handle_destroy(
 	xwayland_surface->emit_signal("destroy", xwayland_surface);
 }
 
+void WlrXWaylandSurface::handle_surface_commit(
+     struct wl_listener *listener, void *data) {
+    //std::cout << "WlrXWaylandSurface::handle_surface_commit(..) called w/data: " << data << std::endl;
+   	WlrXWaylandSurface *xwayland_surface = wl_container_of(listener, xwayland_surface, surface_commit);
+    //wlr_output_schedule_frame(xwayland_surface->wlr_xwayland_surface->wlr_output)
+    xwayland_surface->emit_signal("surface_commit", xwayland_surface);
+}
+
+// Possibly useful for subsurface rendering from Haskell; if you see this after a
+// while and it's not being used: delete.
+void WlrXWaylandSurface::schedule_frame(Variant _output) {
+  std::cout << "WlrXWaylandSurface::schedule_frame(..)" << std::endl;
+	auto output = dynamic_cast<WlrOutput *>((Node *)_output);
+  struct wlr_output * w_output = output->get_wlr_output();
+  wlr_output_schedule_frame(w_output);
+}
+
 void WlrXWaylandSurface::handle_map(
 		struct wl_listener *listener, void *data) {
 	WlrXWaylandSurface *xwayland_surface = wl_container_of(
 			listener, xwayland_surface, map);
+
+  xwayland_surface->surface_commit.notify = handle_surface_commit;
+  wl_signal_add(&xwayland_surface->wlr_xwayland_surface->surface->events.commit, &xwayland_surface->surface_commit);
+
 	xwayland_surface->emit_signal("map", xwayland_surface);
-  std::cout << "WlrXWaylandSurface::handle_map(..) called w/xwayland_surface: " << xwayland_surface << std::endl;
 }
 
 void WlrXWaylandSurface::handle_unmap(
@@ -293,7 +318,7 @@ WlrXWaylandSurface::WlrXWaylandSurface() {
 
 WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_surface) {
     std::cout << "WlrXWaylandSurface(..) constructor called." << std::endl;
-    
+
   	destroy.notify = handle_destroy;
   	wl_signal_add(&xwayland_surface->events.destroy, &destroy);
   	map.notify = handle_map;
@@ -503,6 +528,8 @@ void WlrXWaylandSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
                                                 "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT,
+                                            "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("surface_commit", PropertyInfo(Variant::OBJECT,
                                             "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT,
                                               "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
