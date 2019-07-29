@@ -48,10 +48,13 @@ class WlrXWaylandSurface: public Resource {
 	struct wl_listener destroy;
 	struct wl_listener map;
 	struct wl_listener unmap;
+	struct wl_listener configure;
 
 	static void handle_destroy(struct wl_listener *listener, void *data);
 	static void handle_map(struct wl_listener *listener, void *data);
 	static void handle_unmap(struct wl_listener *listener, void *data);
+        static void handle_configure(struct wl_listener *listener, void *data);
+
  protected:
 	static void _bind_methods();
 	WlrXWaylandSurface(); /* Necessary for Object */

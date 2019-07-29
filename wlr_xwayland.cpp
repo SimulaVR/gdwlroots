@@ -33,6 +33,9 @@ void WlrXWayland::handle_new_xwayland_surface(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
       (struct wlr_xwayland_surface *)data);
+
+	struct wlr_xwayland_surface* wlrsurface = (struct wlr_xwayland_surface*) data;
+	wlr_xwayland_surface_ping(wlrsurface);
 	xwayland->emit_signal("new_surface", surface);
 }
 
@@ -196,6 +199,18 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
 	return new WlrXWaylandSurface(xwayland_surface);
 }
 
+void WlrXWaylandSurface::handle_configure(
+		struct wl_listener *listener, void *data) {
+    WlrXWaylandSurface *xwayland_surface = wl_container_of(
+                        listener, xwayland_surface, configure);
+
+        struct wlr_xwayland_surface_configure_event *event = (struct wlr_xwayland_surface_configure_event*) data;
+
+        wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, event->x, event->y,
+                event->width, event->height);
+}
+
+
 extern "C" {
 
 void WlrXWaylandSurface::handle_request_maximize(
@@ -299,6 +314,8 @@ WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_sur
   	wl_signal_add(&xwayland_surface->events.map, &map);
   	unmap.notify = handle_unmap;
   	wl_signal_add(&xwayland_surface->events.unmap, &unmap);
+	configure.notify = handle_configure;
+	wl_signal_add(&xwayland_surface->events.request_configure, &configure);
 
 	wlr_xwayland_surface = xwayland_surface;
   xwayland_surface->data = this;
