@@ -42,10 +42,13 @@ WlrSeat::~WlrSeat() {
 }
 
 void WlrSeat::pointer_notify_enter(Variant _surface, double sx, double sy) {
-  //cout << "WlrSeat::pointer_notify_enter" << endl;
+  if (_surface ) {
 	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
+  if (surface) { 
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
+  }
+  }
 }
 
 void WlrSeat::pointer_clear_focus() {
@@ -189,17 +192,17 @@ bool WlrSeat::validate_grab_serial(uint32_t serial) {
 }
 
 void WlrSeat::set_keyboard(Variant _keyboard) {
-  //cout << "WlrSeat::set_keyboard" << endl;
 	auto keyboard = dynamic_cast<WlrKeyboard *>((Object *)_keyboard);
 	wlr_seat_set_keyboard(wlr_seat, keyboard->get_wlr_input_device());
 }
 
 void WlrSeat::keyboard_notify_enter(Variant _surface) {
-  //cout << "WlrSeat::keyboard_notify_enter" << endl;
 	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
+  if (surface) {
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
 	wlr_seat_keyboard_notify_enter(wlr_seat, surface->get_wlr_surface(),
 		keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+  }
 }
 
 void WlrSeat::keyboard_notify_key(Variant _key_event) {

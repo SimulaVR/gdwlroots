@@ -255,6 +255,4 @@ void wlr_xwayland_surface_ping(struct wlr_xwayland_surface *surface);
  */
 bool wlr_xwayland_or_surface_wants_focus(
 	const struct wlr_xwayland_surface *surface);
-
-
 #endif

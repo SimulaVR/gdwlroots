@@ -33,7 +33,6 @@ func _handle_destroy(xwayland_surface):
 	set_process(false)
 	
 func _handle_map(xwayland_surface):
-	print("XWaylandSurface.gd:_handle_map")
 	set_process(true)
 	set_process_input(true)
 	emit_signal("map", self)
@@ -56,18 +55,38 @@ func _xwayland_surface_set(val):
 	# xwayland_surface = xwayland_surface.get_xwayland_surface()
 	xwayland_surface.connect("request_move", self, "_handle_request_move")
 
+# Needs fromCenter:
 func _draw():
   if xwayland_surface != null:
 	  var surface = xwayland_surface.get_wlr_surface()
-	  var texture = surface.get_texture() #<- Line 61
-	  if texture == null:
+	  if surface == null:
 		  return
-	  var position = Vector2(0,0)
-	  # var position = Vector2(
-	  #   (-xwayland_surface.get_buffer_width() / 2) + sx,
-	  #   (-xwayland_surface.get_buffer_height() / 2) + sy)
-	  draw_texture(texture, position)
-	  surface.send_frame_done()
+	  else:
+		  var texture = surface.get_texture()
+		  if texture == null:
+			  print("Texture is null!")
+			  return
+		  var state = xwayland_surface.get_wlr_surface().get_current_state()
+		  var position = Vector2(-state.get_buffer_width() / 2, -state.get_buffer_height() / 2)
+		  draw_texture(texture, position)
+		  surface.send_frame_done()
+
+
+# func _draw_surface(surface, sx, sy):
+# 	var texture = surface.get_texture()
+# 	if texture == null:
+# 		return
+# 	var state = xwayland_surface.get_wlr_surface().get_current_state()
+# 	var position = Vector2(
+# 		(-state.get_buffer_width() / 2) + sx,
+# 		(-state.get_buffer_height() / 2) + sy)
+# 	draw_texture(texture, position)
+# 	surface.send_frame_done()
+
+# func _draw():
+# 	if xwayland_surface != null:
+# 		var fn = funcref(self, "_draw_surface")
+# 		xwayland_surface.for_each_surface(fn)
 
 func _process(delta):
 	var collisionShape = get_node("CollisionShape2D")
@@ -92,17 +111,18 @@ func get_surface_coords(position):
 	return position + geometry.size / Vector2(2, 2) + geometry.position
 
 func input_event_passthrough(event):
+	xwayland_surface.set_activated(true)
 	var notify_frame = false
 	if event is InputEventMouseMotion:
 		var position = get_surface_coords(to_local(event.position))
 		var surface = xwayland_surface.surface_at(position.x, position.y)
 		if surface != null:
-			seat.pointer_notify_enter(surface.get_surface(),
-					surface.get_sub_x(), surface.get_sub_y())
+			seat.pointer_notify_enter(surface.get_surface(), surface.get_sub_x(), surface.get_sub_y())
 			seat.pointer_notify_motion(surface.get_sub_x(), surface.get_sub_y())
 			notify_frame = true
 	if event is InputEventMouseButton:
 		seat.pointer_notify_button(event.button_index, event.pressed)
+		var surface = xwayland_surface.surface_at(position.x, position.y)
 		notify_frame = true
 	if notify_frame:
 		seat.pointer_notify_frame()
@@ -125,6 +145,7 @@ func _integrate_forces(state):
 	state.set_linear_velocity(lv)
 
 func _on_RigidBody2D_mouse_entered():
+	xwayland_surface.set_activated(true)
 	var position = get_surface_coords(
 			to_local(get_viewport().get_mouse_position()))
 	var surface = xwayland_surface.surface_at(position.x, position.y)

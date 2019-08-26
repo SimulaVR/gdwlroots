@@ -2,6 +2,8 @@
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "drivers/gles2/rasterizer_storage_gles2.h"
 #include "gles2_renderer.h"
+#include<string>
+#include <iostream>
 extern "C" {
 #define static
 #include <wayland-server.h>
@@ -9,6 +11,25 @@ extern "C" {
 #include <wlr/render/interface.h>
 #include <wlr/util/log.h>
 #undef static
+
+void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeight) {
+    const int numberOfPixels = windowWidth * windowHeight * 3;
+    unsigned char pixels[numberOfPixels];
+
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadBuffer(GL_FRONT);
+    //glReadPixels(0, 0, windowWidth, windowHeight, GL_BGR_EXT, GL_UNSIGNED_BYTE, pixels);
+    glReadPixels(0, 0, windowWidth, windowHeight, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+
+    FILE *outputFile = fopen(filename.c_str(), "w");
+    short header[] = {0, 2, 0, 0, 0, 0, (short) windowWidth, (short) windowHeight, 24};
+
+    fwrite(&header, sizeof(header), 1, outputFile);
+    fwrite(pixels, numberOfPixels, 1, outputFile);
+    fclose(outputFile);
+
+    printf("Finish writing to file.\n");
+}
 
 static const enum wl_shm_format wl_formats[] = {
 	WL_SHM_FORMAT_ARGB8888,
@@ -74,6 +95,7 @@ static const enum wl_shm_format *renderer_formats(
 
 static bool renderer_format_supported(
 		struct wlr_renderer *renderer, enum wl_shm_format fmt) {
+  //std::cout << "renderer_format_supported: " << get_gles2_format_from_wl(fmt) << std::endl;
 	return get_gles2_format_from_wl(fmt) != NULL;
 }
 
@@ -117,6 +139,10 @@ static bool gles2_flush_errors(const char *context) {
 struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 		struct wlr_renderer *_renderer, enum wl_shm_format wl_fmt,
 		uint32_t stride, uint32_t width, uint32_t height, const void *data) {
+
+  std::cout << "wl_fmt: " << wl_fmt << std::endl;
+  std::cout << "stride: " << stride << std::endl;
+
 	struct WlrGLES2Renderer::renderer_state *state =
 		(struct WlrGLES2Renderer::renderer_state *)_renderer;
 	WlrGLES2Renderer *renderer = state->godot_renderer;
@@ -142,20 +168,26 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
 
-	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	gles2_flush_errors("glTexParameterf");
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	gles2_flush_errors("glPixelStorei");
 
-	if (fmt->swizzle) {
+	if (fmt->swizzle && fmt->has_alpha) {
 		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
+		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+	} else if (fmt->swizzle && !fmt->has_alpha) {
+		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ONE}; //force the alpha values to 1 (or else they'll be garbage & cause weird transparency effects)
 		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
 	}
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
+
+  //glGenerateMipmap(texture->target); //Doesn't seem to cause mip maps to be generated
+  //glGenerateTextureMipmap(texture->tex_id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 			GL_RGBA, fmt->gl_type, data);
@@ -262,8 +294,8 @@ bool WlrGLES2Texture::wlr_texture_write_pixels(
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
 
-	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	gles2_flush_errors("glTexParameterf");

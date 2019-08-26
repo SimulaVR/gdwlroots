@@ -4,6 +4,7 @@
 #include "wlr_backend.h"
 #include "wlr_output.h"
 #include <stdlib.h>
+#include <iostream>
 extern "C" {
 #include <wlr/interfaces/wlr_output.h>
 
@@ -38,10 +39,7 @@ void WlrOutput::_size_changed() {
 	if (wlr_output == NULL) {
 		return;
 	}
-	// TODO: This always returns 0x0, but the internet suggests that it should
-	// work correctly.
-	//auto size = viewport->get_visible_rect().size;
-	wlr_output_set_custom_mode(wlr_output, 1280, 720, 0);
+  wlr_output_update_custom_mode(wlr_output, 1280, 720, 6000); //1024x768
 }
 
 void WlrOutput::_bind_methods() {

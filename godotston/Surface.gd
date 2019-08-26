@@ -32,9 +32,8 @@ func focus():
 func _handle_destroy(xdg_surface):
 	queue_free()
 	set_process(false)
-	
+
 func _handle_map(xdg_surface):
-	print("Surface.gd:_handle_map")
 	set_process(true)
 	set_process_input(true)
 	emit_signal("map", self)
@@ -70,6 +69,7 @@ func _draw_surface(surface, sx, sy):
 	draw_texture(texture, position)
 	surface.send_frame_done()
 
+# original
 func _draw():
 	if xdg_surface != null:
 		var fn = funcref(self, "_draw_surface")
