@@ -44,7 +44,7 @@ WlrSeat::~WlrSeat() {
 void WlrSeat::pointer_notify_enter(Variant _surface, double sx, double sy) {
   if (_surface ) {
 	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
-  if (surface) { 
+  if (surface) {
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
   }

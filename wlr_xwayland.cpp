@@ -37,7 +37,7 @@ void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, 
 
   WlrXWaylandSurface *xwayland_surface = wl_container_of(listener, xwayland_surface, request_configure);
 
-  wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, event->x, event->y,
+  wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0,
                                  event->width, event->height);
 }
 
@@ -144,11 +144,13 @@ void WlrXWaylandSurface::handle_map(
 	WlrXWaylandSurface *xwayland_surface = wl_container_of(
 			listener, xwayland_surface, map);
 
-  // xwayland_surface->surface_commit.notify = handle_surface_commit;
-  // wl_signal_add(&xwayland_surface->wlr_xwayland_surface->surface->events.commit, &xwayland_surface->surface_commit);
+  auto width = xwayland_surface->get_width();
+  auto height = xwayland_surface->get_height();
 
-  //More text legible, but causes weird "white surfaces" to appear.
-	//wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 750, 750); 
+  if (width < 200 || height < 200) {
+    wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 1024, 768);
+  }
+
   wlr_xwayland_surface_set_maximized(xwayland_surface->wlr_xwayland_surface, true);
 	xwayland_surface->emit_signal("map", xwayland_surface);
 }

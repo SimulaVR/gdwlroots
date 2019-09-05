@@ -140,9 +140,6 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 		struct wlr_renderer *_renderer, enum wl_shm_format wl_fmt,
 		uint32_t stride, uint32_t width, uint32_t height, const void *data) {
 
-  std::cout << "wl_fmt: " << wl_fmt << std::endl;
-  std::cout << "stride: " << stride << std::endl;
-
 	struct WlrGLES2Renderer::renderer_state *state =
 		(struct WlrGLES2Renderer::renderer_state *)_renderer;
 	WlrGLES2Renderer *renderer = state->godot_renderer;
