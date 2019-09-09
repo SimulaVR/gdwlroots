@@ -275,9 +275,10 @@ void WlrSeat::_notification(int p_what) {
   case MainLoop::NOTIFICATION_WM_FOCUS_IN:
     break;
   case MainLoop::NOTIFICATION_WM_FOCUS_OUT:
-    //Send an Alt KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
+    //Send an Alt KeyPress + KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
+    wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 1);
     wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 0);
     break;
   default:
