@@ -39,7 +39,6 @@ void WlrKeyboard::_bind_methods() {
 extern "C" {
 
 void WlrKeyboard::handle_key(struct wl_listener *listener, void *data) {
-  //cout << "WlrKeyboard::handle_key" << endl;
 	WlrKeyboard *keyboard = wl_container_of(listener, keyboard, key);
 	struct wlr_event_keyboard_key *event =
 		(struct wlr_event_keyboard_key *)data;
@@ -48,7 +47,6 @@ void WlrKeyboard::handle_key(struct wl_listener *listener, void *data) {
 }
 
 void WlrKeyboard::handle_modifiers(struct wl_listener *listener, void *data) {
-  //cout << "WlrKeyboard::handle_modifiers" << endl;
 	WlrKeyboard *keyboard = wl_container_of(listener, keyboard, modifiers);
 	keyboard->emit_signal("modifiers", keyboard);
 }
@@ -109,7 +107,6 @@ static inline int64_t timespec_to_msec(const struct timespec *a) {
 }
 
 void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
-  //cout << "WlrKeyboard::_input" << endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	Ref<InputEventKey> k = p_event;

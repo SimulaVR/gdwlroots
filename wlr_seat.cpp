@@ -210,15 +210,6 @@ void WlrSeat::keyboard_notify_key(Variant _key_event) {
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	auto key_event = dynamic_cast<WlrEventKeyboardKey *>((Object *)_key_event);
 	auto event = key_event->get_wlr_event();
-  //auto event_keycode = event->keycode;
-  //auto event_state = event->state;
-  //cout << "WlrSeat::keyboard_notify_key(..) (event->keycode, event->state): "
-       // << "("
-       // << event_keycode
-       // << ", "
-       // << event_state
-       // << ")"
-       // << endl;
 	wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now),
 			event->keycode, event->state);
 }
@@ -271,4 +262,25 @@ void WlrSeat::_bind_methods() {
 	BIND_ENUM_CONSTANT(SEAT_CAPABILITY_POINTER);
 	BIND_ENUM_CONSTANT(SEAT_CAPABILITY_KEYBOARD);
 	BIND_ENUM_CONSTANT(SEAT_CAPABILITY_TOUCH);
+}
+
+void WlrSeat::_notification(int p_what) {
+	switch (p_what) {
+	case NOTIFICATION_ENTER_TREE:
+		ensure_wl_global(get_wayland_display());
+		break;
+	case NOTIFICATION_EXIT_TREE:
+		destroy_wl_global(get_wayland_display());
+		break;
+  case MainLoop::NOTIFICATION_WM_FOCUS_IN:
+    break;
+  case MainLoop::NOTIFICATION_WM_FOCUS_OUT:
+    //Send an Alt KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 0);
+    break;
+  default:
+    return;
+	}
 }
