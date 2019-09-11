@@ -7,6 +7,7 @@
 #include <iostream>
 using namespace std;
 extern "C" {
+#include <xkbcommon/xkbcommon.h>
 #include <linux/input-event-codes.h>
 #include <wayland-server.h>
 #include <wlr/types/wlr_data_device.h>
@@ -275,11 +276,16 @@ void WlrSeat::_notification(int p_what) {
   case MainLoop::NOTIFICATION_WM_FOCUS_IN:
     break;
   case MainLoop::NOTIFICATION_WM_FOCUS_OUT:
-    //Send an Alt KeyPress + KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 1);
-    wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 0);
+    {
+    //TODO: Send an Alt KeyPress + KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
+    // struct timespec now;
+    // clock_gettime(CLOCK_MONOTONIC, &now);
+    // auto w_keyboard = wlr_seat_get_keyboard(wlr_seat);
+    // auto is_alt_pressed = xkb_state_mod_name_is_active(w_keyboard->xkb_state, XKB_MOD_NAME_ALT, XKB_STATE_MODS_EFFECTIVE);
+    // if (is_alt_pressed) {
+    //   wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now), 56, 0);
+    // }
+    }
     break;
   default:
     return;
