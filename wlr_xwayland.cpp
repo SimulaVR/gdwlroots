@@ -147,11 +147,12 @@ void WlrXWaylandSurface::handle_map(
   auto width = xwayland_surface->get_width();
   auto height = xwayland_surface->get_height();
 
-  if (width < 200 || height < 200) {
-    wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 1024, 768);
-  }
+  // if (width < 200 || height < 200) {
+  //   wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 1024, 1024); //former 1024x768
+  // }
 
-  wlr_xwayland_surface_set_maximized(xwayland_surface->wlr_xwayland_surface, true);
+  //wlr_xwayland_surface_set_maximized(xwayland_surface->wlr_xwayland_surface, true);
+  wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 768, 768); //former 1024x768
 	xwayland_surface->emit_signal("map", xwayland_surface);
 }
 
