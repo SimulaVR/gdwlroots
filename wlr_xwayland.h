@@ -92,6 +92,9 @@ class WlrXWaylandSurface: public Resource {
 	uint32_t get_min_height() const;
 	uint32_t get_max_width() const;
 	uint32_t get_max_height() const;
+	uint32_t get_x() const;
+	void print_xwayland_surface_properties();
+	uint32_t get_y() const;
 
 	/* WlrXWaylandSurface *get_client_pending_state() const; */
 	/* WlrXWaylandSurface *get_server_pending_state() const; */
