@@ -147,9 +147,9 @@ void WlrXWaylandSurface::handle_map(
   auto width = xwayland_surface->get_width();
   auto height = xwayland_surface->get_height();
 
-  // Don't map child surfaces
+  // Attempt to only map parent surfaces (fails for some programs though, including google-chrome)
   if( xwayland_surface->wlr_xwayland_surface->parent == NULL ) { // Perhaps also: wl_list_length(&xwayland_surface->wlr_xwayland_surface->parent_link) > 0 ?
-    wlr_xwayland_surface_configure(xwayland_surface->wlr_xwayland_surface, 0, 0, 768, 768); //former 1024x768
+    // xwayland_surface->print_xwayland_surface_properties();
     xwayland_surface->emit_signal("map", xwayland_surface);
   }
 }
@@ -310,11 +310,11 @@ uint32_t WlrXWaylandSurface::get_y() const {
 }
 
 void WlrXWaylandSurface::print_xwayland_surface_properties() {
-    std::cout << "wlr_xwayland_surface->c_class: " << wlr_xwayland_surface->c_class << std::endl;
-    std::cout << "wlr_xwayland_surface->instance: " << wlr_xwayland_surface->instance << std::endl;
-    std::cout << "wlr_xwayland_surface->role: " << wlr_xwayland_surface->role << std::endl;
-    std::cout << "wl_list_length(&wlr_xwayland_surface->parent_link): " << wl_list_length(&wlr_xwayland_surface->parent_link) << std::endl;
-    std::cout << "wlr_xwayland_surface->window_type: " << wlr_xwayland_surface->window_type << std::endl;
+    // std::cout << "wlr_xwayland_surface->c_class: " << wlr_xwayland_surface->c_class << std::endl;
+    // std::cout << "wlr_xwayland_surface->instance: " << wlr_xwayland_surface->instance << std::endl;
+    // std::cout << "wlr_xwayland_surface->role: " << wlr_xwayland_surface->role << std::endl;
+    // std::cout << "wl_list_length(&wlr_xwayland_surface->parent_link): " << wl_list_length(&wlr_xwayland_surface->parent_link) << std::endl;
+    // std::cout << "wlr_xwayland_surface->window_type: " << wlr_xwayland_surface->window_type << std::endl;
 }
 
 uint32_t WlrXWaylandSurface::get_height() const {
