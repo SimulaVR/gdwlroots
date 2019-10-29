@@ -34,6 +34,7 @@ void WlrSurfaceState::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_buffer_height"),
 			&WlrSurfaceState::get_buffer_height);
 	ClassDB::bind_method(D_METHOD("get_scale"), &WlrSurfaceState::get_scale);
+	ClassDB::bind_method(D_METHOD("delete_state"), &WlrSurfaceState::delete_state);
 }
 
 WlrSurfaceState::WlrSurfaceState() {
@@ -56,16 +57,20 @@ int WlrSurface::get_sy() {
 	return wlr_surface->sy;
 }
 
-WlrSurfaceState *WlrSurface::get_current_state() const {
+WlrSurfaceState *WlrSurface::alloc_current_state() const {
 	return new WlrSurfaceState(&wlr_surface->current);
 }
 
-WlrSurfaceState *WlrSurface::get_pending_state() const {
+WlrSurfaceState *WlrSurface::alloc_pending_state() const {
 	return new WlrSurfaceState(&wlr_surface->pending);
 }
 
-WlrSurfaceState *WlrSurface::get_previous_state() const {
+WlrSurfaceState *WlrSurface::alloc_previous_state() const {
 	return new WlrSurfaceState(&wlr_surface->previous);
+}
+
+void WlrSurfaceState::delete_state() {
+  delete this;
 }
 
 Ref<Texture> WlrSurface::get_texture() const {
@@ -83,12 +88,12 @@ void WlrSurface::send_frame_done() {
 void WlrSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sx"), &WlrSurface::get_sx);
 	ClassDB::bind_method(D_METHOD("get_sy"), &WlrSurface::get_sy);
-	ClassDB::bind_method(D_METHOD("get_current_state"),
-			&WlrSurface::get_current_state);
-	ClassDB::bind_method(D_METHOD("get_pending_state"),
-			&WlrSurface::get_pending_state);
-	ClassDB::bind_method(D_METHOD("get_previous_state"),
-			&WlrSurface::get_previous_state);
+	ClassDB::bind_method(D_METHOD("alloc_current_state"),
+			&WlrSurface::alloc_current_state);
+	ClassDB::bind_method(D_METHOD("alloc_pending_state"),
+			&WlrSurface::alloc_pending_state);
+	ClassDB::bind_method(D_METHOD("alloc_previous_state"),
+			&WlrSurface::alloc_previous_state);
 	ClassDB::bind_method(D_METHOD("get_texture"),
 			&WlrSurface::get_texture);
 	ClassDB::bind_method(D_METHOD("send_frame_done"),
@@ -129,11 +134,17 @@ double WlrSurfaceAtResult::get_sub_y() {
 	return sub_y;
 }
 
+void WlrSurfaceAtResult::delete_surface_at_result() {
+	delete this;
+}
+
 void WlrSurfaceAtResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sub_x"), &WlrSurfaceAtResult::get_sub_x);
 	ClassDB::bind_method(D_METHOD("get_sub_y"), &WlrSurfaceAtResult::get_sub_y);
 	ClassDB::bind_method(D_METHOD("get_surface"),
 			&WlrSurfaceAtResult::get_surface);
+	ClassDB::bind_method(D_METHOD("delete_surface_at_result"),
+                       &WlrSurfaceAtResult::delete_surface_at_result);
 }
 
 WlrSurfaceAtResult::WlrSurfaceAtResult() {

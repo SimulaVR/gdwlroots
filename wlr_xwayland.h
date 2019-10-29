@@ -62,6 +62,8 @@ class WlrXWaylandSurface: public Resource {
 	static void handle_map(struct wl_listener *listener, void *data);
 	static void handle_unmap(struct wl_listener *listener, void *data);
 
+  Array children;
+
  protected:
 	static void _bind_methods();
 	WlrXWaylandSurface(); /* Necessary for Object */
@@ -117,6 +119,7 @@ class WlrXWaylandSurface: public Resource {
 	void for_each_surface(Variant func);
 	/* void schedule_frame(Variant _output); */
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
+	void delete_wlr_xwayland_surface();
 };
 
 class WlrXWayland: public WaylandGlobal {

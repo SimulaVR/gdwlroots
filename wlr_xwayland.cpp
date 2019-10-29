@@ -121,6 +121,7 @@ WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
 }
 
 
+
 extern "C" {
 
 void WlrXWaylandSurface::handle_destroy(
@@ -136,16 +137,13 @@ void WlrXWaylandSurface::handle_destroy(
   wl_list_remove(&xwayland_surface->map.link);
   wl_list_remove(&xwayland_surface->unmap.link);
 
-  xwayland_surface->emit_signal("destroy", xwayland_surface);
+  xwayland_surface->emit_signal("destroy", xwayland_surface); //We `delete` this surface elsewhere
 }
 
 void WlrXWaylandSurface::handle_map(
     struct wl_listener *listener, void *data) {
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, map);
-
-  auto width = xwayland_surface->get_width();
-  auto height = xwayland_surface->get_height();
 
   // Attempt to only map parent surfaces (fails for some programs though, including google-chrome)
   if( xwayland_surface->wlr_xwayland_surface->parent == NULL ) { // Perhaps also: wl_list_length(&xwayland_surface->wlr_xwayland_surface->parent_link) > 0 ?
@@ -175,6 +173,10 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
     return (WlrXWaylandSurface *)xwayland_surface->data;
   }
   return new WlrXWaylandSurface(xwayland_surface);
+}
+
+void WlrXWaylandSurface::delete_wlr_xwayland_surface() {
+  delete this;
 }
 
 extern "C" {
@@ -338,20 +340,20 @@ uint32_t WlrXWaylandSurface::get_max_height() const {
 }
 
 Array WlrXWaylandSurface::get_children() {
-  Array array_xwayland_surfaces;
   struct wlr_xwayland_surface * xws;
-  std::cout << "wlr_xwayland_surface: " << wlr_xwayland_surface << std::endl;
-  int length = wl_list_length(&wlr_xwayland_surface->children);
-  int length2 = wl_list_length(&wlr_xwayland_surface->surface->subsurfaces);
-  // std::cout << "wl_list_length(wlr_xwayland_surface->children): " << length << std::endl; //alternates between correct value and 0
-  // std::cout << "wl_list_length(&wlr_xwayland_surface->surface->subsurfaces): " << length2 << std::endl; //is always 0
+
+  children.clear();
+
   wl_list_for_each(xws, &wlr_xwayland_surface->children, parent_link) {
-    WlrXWaylandSurface * xWS;
-    xWS = new WlrXWaylandSurface(xws);
-    Variant _xws = Variant( (Object *) xWS );
-    array_xwayland_surfaces.push_front(_xws);
+    if (xws->data) {
+      WlrXWaylandSurface * xWS;
+      xWS = (WlrXWaylandSurface *)xws->data; //Only return children for whom we have WlrXWaylandSurface's formed already
+      Variant _xWS = Variant( (Object *) xWS );
+      children.push_front(_xWS);
+    }
   }
-  return array_xwayland_surfaces;
+
+  return children;
 }
 
 void WlrXWaylandSurface::_bind_methods() {
@@ -381,6 +383,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"), &WlrXWaylandSurface::set_maximized);
 	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"), &WlrXWaylandSurface::set_fullscreen);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXWaylandSurface::send_close);
+	ClassDB::bind_method(D_METHOD("delete_wlr_xwayland_surface"), &WlrXWaylandSurface::delete_wlr_xwayland_surface);
 
 	ADD_SIGNAL(MethodInfo("request_maximize", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));

@@ -23,6 +23,7 @@ public:
 	int get_buffer_width();
 	int get_buffer_height();
 	int get_scale();
+  void delete_state();
 
 	WlrSurfaceState(const struct wlr_surface_state *state);
 };
@@ -45,9 +46,9 @@ public:
 
 	int get_sx();
 	int get_sy();
-	WlrSurfaceState *get_current_state() const;
-	WlrSurfaceState *get_pending_state() const;
-	WlrSurfaceState *get_previous_state() const;
+	WlrSurfaceState *alloc_current_state() const;
+	WlrSurfaceState *alloc_pending_state() const;
+	WlrSurfaceState *alloc_previous_state() const;
 	Ref<Texture> get_texture() const;
 	void send_frame_done();
 };
@@ -68,6 +69,7 @@ public:
 	WlrSurface *get_surface();
 	double get_sub_x();
 	double get_sub_y();
+	void delete_surface_at_result();
 
 	WlrSurfaceAtResult(WlrSurface *surface, double sub_x, double sub_y);
 };
