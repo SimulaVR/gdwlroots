@@ -135,7 +135,8 @@ double WlrSurfaceAtResult::get_sub_y() {
 }
 
 void WlrSurfaceAtResult::delete_surface_at_result() {
-	delete this;
+	unreference();
+	memdelete(this);
 }
 
 void WlrSurfaceAtResult::_bind_methods() {

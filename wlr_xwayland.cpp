@@ -178,7 +178,8 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
 }
 
 void WlrXWaylandSurface::delete_wlr_xwayland_surface() {
-  delete this;
+  unreference();
+  memdelete(this);
 }
 
 extern "C" {
