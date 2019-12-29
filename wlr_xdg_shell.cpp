@@ -88,13 +88,11 @@ extern "C" {
 static void for_each_surface_iter(struct wlr_surface *surface,
 		int sx, int sy, void *data) {
 	FuncRef *func = (FuncRef *)data;
-	const Variant *args[] = {
-		new Variant(WlrSurface::from_wlr_surface(surface)),
-		new Variant(sx),
-		new Variant(sy),
-	};
+	Variant vSurface(WlrSurface::from_wlr_surface(surface))
+		, vSx(sx), vSy(sy);
+	const Variant *args[] = { &vSurface, &vSx, &vSy };
 	Variant::CallError error;
-	func->call_func((const Variant **)&args[0], 3, error);
+	func->call_func(&args[0], sizeof(args)/sizeof(args[0]), error);
 	if (error.error != Variant::CallError::Error::CALL_OK) {
 		printf("call error %d\n", error.error);
 	}
@@ -112,8 +110,7 @@ static void for_each_surface_iter_ffi(struct wlr_surface *surface,
 
 }
 
-void WlrXdgSurface::for_each_surface(Variant func) {
-	auto fn = (Ref<FuncRef>)func;
+void WlrXdgSurface::for_each_surface(Ref<FuncRef> fn) {
 	wlr_xdg_surface_for_each_surface(
 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
 }

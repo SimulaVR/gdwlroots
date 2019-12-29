@@ -42,15 +42,15 @@ public:
 	uint32_t get_capabilities() const;
 	void set_capabilities(uint32_t capabilities);
 
-	void pointer_notify_enter(Variant surface, double sx, double sy);
+	void pointer_notify_enter(Object* surface, double sx, double sy);
 	void pointer_notify_motion(double sx, double sy);
-	uint32_t pointer_notify_button(Variant button, bool pressed);
+	uint32_t pointer_notify_button(uint32_t button, bool pressed);
 	void pointer_notify_frame();
 	void pointer_clear_focus();
 
-	void set_keyboard(Variant _keyboard);
-	void keyboard_notify_enter(Variant _surface);
-	void keyboard_notify_key(Variant key_event);
+	void set_keyboard(Object* _keyboard);
+	void keyboard_notify_enter(Object* _surface);
+	void keyboard_notify_key(Ref<WlrEventKeyboardKey> key_event);
 	void keyboard_notify_modifiers();
 
 	bool validate_grab_serial(uint32_t serial);

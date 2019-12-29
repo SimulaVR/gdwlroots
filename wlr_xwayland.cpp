@@ -58,9 +58,11 @@ void WlrXWayland::_bind_methods() {
 }
 
 
-void WlrXWayland::start_xwayland(Variant _compositor, Variant _seat) {
-	auto compositor = dynamic_cast<WlrCompositor *>((Node *)_compositor);
-	auto seat = dynamic_cast<WlrSeat *>((Node *)_seat);
+void WlrXWayland::start_xwayland(Object* _compositor, Object* _seat) {
+	auto compositor = Object::cast_to<WlrCompositor>(_compositor);
+	auto seat = Object::cast_to<WlrSeat>(_seat);
+	if (!compositor || !seat) return;
+
   struct wlr_seat * w_seat = seat->get_wlr_seat();
 
 	if (wlr_xwayland) {

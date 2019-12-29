@@ -11,8 +11,8 @@ extern "C" {
 }
 
 // TODO: gdscript users may want to create synthetic key events with this
-class WlrEventKeyboardKey : public Object {
-	GDCLASS(WlrEventKeyboardKey, Object);
+class WlrEventKeyboardKey : public Resource {
+	GDCLASS(WlrEventKeyboardKey, Resource);
 
 	struct wlr_event_keyboard_key *event;
 

@@ -116,7 +116,7 @@ class WlrXWaylandSurface: public Resource {
 
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
-	void for_each_surface(Variant func);
+	void for_each_surface(Ref<FuncRef> func);
 	/* void schedule_frame(Variant _output); */
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
 	void delete_wlr_xwayland_surface();
@@ -139,7 +139,7 @@ class WlrXWayland: public WaylandGlobal {
  protected:
 	static void _bind_methods();
  public:
-  void start_xwayland(Variant _compositor, Variant _seat);
+  void start_xwayland(Object* _compositor, Object* _seat);
   /* void set_cursor(); */
 	WlrXWayland(WlrCompositor * WlrCompositor);
 	WlrXWayland();

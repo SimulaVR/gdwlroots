@@ -42,13 +42,10 @@ WlrSeat::~WlrSeat() {
 	wlr_seat = NULL;
 }
 
-void WlrSeat::pointer_notify_enter(Variant _surface, double sx, double sy) {
-  if (_surface ) {
-	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
-  if (surface) {
+void WlrSeat::pointer_notify_enter(Object* _surface, double sx, double sy) {
+  if (auto surface = Object::cast_to<WlrSurface>(_surface)) {
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
-  }
   }
 }
 
@@ -137,10 +134,10 @@ void WlrSeat::pointer_notify_axis_continuous(double x, double y) {
   return;
 }
 
-uint32_t WlrSeat::pointer_notify_button(Variant button, bool pressed) {
+uint32_t WlrSeat::pointer_notify_button(uint32_t button, bool pressed) {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
-	auto godot_button = (ButtonList)(uint32_t)button;
+	auto godot_button = (ButtonList)button;
 	switch (godot_button) {
 	case BUTTON_LEFT:
 	case BUTTON_RIGHT:
@@ -192,24 +189,23 @@ bool WlrSeat::validate_grab_serial(uint32_t serial) {
 	return wlr_seat_validate_grab_serial(wlr_seat, serial);
 }
 
-void WlrSeat::set_keyboard(Variant _keyboard) {
-	auto keyboard = dynamic_cast<WlrKeyboard *>((Object *)_keyboard);
-	wlr_seat_set_keyboard(wlr_seat, keyboard->get_wlr_input_device());
+void WlrSeat::set_keyboard(Object* _keyboard) {
+	if (auto keyboard = Object::cast_to<WlrKeyboard>(_keyboard)) {
+		wlr_seat_set_keyboard(wlr_seat, keyboard->get_wlr_input_device());
+	}
 }
 
-void WlrSeat::keyboard_notify_enter(Variant _surface) {
-	auto surface = dynamic_cast<WlrSurface *>((Object *)_surface);
-  if (surface) {
+void WlrSeat::keyboard_notify_enter(Object* _surface) {
+  if (auto surface = Object::cast_to<WlrSurface>(_surface)) {
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
 	wlr_seat_keyboard_notify_enter(wlr_seat, surface->get_wlr_surface(),
 		keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
   }
 }
 
-void WlrSeat::keyboard_notify_key(Variant _key_event) {
+void WlrSeat::keyboard_notify_key(Ref<WlrEventKeyboardKey> key_event) {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
-	auto key_event = dynamic_cast<WlrEventKeyboardKey *>((Object *)_key_event);
 	auto event = key_event->get_wlr_event();
 	wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now),
 			event->keycode, event->state);
