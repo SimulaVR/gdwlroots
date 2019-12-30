@@ -270,13 +270,10 @@ WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
 extern "C" {
 
 void WlrGLES2Texture::wlr_texture_get_size(struct wlr_texture *_texture, int *width, int *height) {
-  WlrGLES2Texture *texture = (WlrGLES2Texture *)_texture;
+  WlrGLES2Texture *texture = WlrGLES2Texture::texture_from_wlr(_texture);
   if(texture) {
-    *width = texture->w; //gles2_renderer.cpp:275
+    *width = texture->w;
     *height = texture->h;
-  } else {
-    *width = 0; //gles2_renderer.cpp:275
-    *height = 0;
   }
 }
 

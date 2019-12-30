@@ -17,6 +17,7 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WlrCompositor>();
 	ClassDB::register_class<WlrDataDeviceManager>();
 	ClassDB::register_class<WlrKeyboard>();
+	ClassDB::register_class<WlrEventKeyboardKey>();
 	ClassDB::register_class<WlrOutput>();
 	ClassDB::register_class<WlrSeat>();
 	ClassDB::register_class<WlrSurface>();

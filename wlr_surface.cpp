@@ -134,17 +134,11 @@ double WlrSurfaceAtResult::get_sub_y() {
 	return sub_y;
 }
 
-void WlrSurfaceAtResult::delete_surface_at_result() {
-	delete this;
-}
-
 void WlrSurfaceAtResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sub_x"), &WlrSurfaceAtResult::get_sub_x);
 	ClassDB::bind_method(D_METHOD("get_sub_y"), &WlrSurfaceAtResult::get_sub_y);
 	ClassDB::bind_method(D_METHOD("get_surface"),
 			&WlrSurfaceAtResult::get_surface);
-	ClassDB::bind_method(D_METHOD("delete_surface_at_result"),
-                       &WlrSurfaceAtResult::delete_surface_at_result);
 }
 
 WlrSurfaceAtResult::WlrSurfaceAtResult() {

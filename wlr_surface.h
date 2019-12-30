@@ -69,7 +69,6 @@ public:
 	WlrSurface *get_surface();
 	double get_sub_x();
 	double get_sub_y();
-	void delete_surface_at_result();
 
 	WlrSurfaceAtResult(WlrSurface *surface, double sub_x, double sub_y);
 };

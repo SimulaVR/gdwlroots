@@ -42,8 +42,8 @@ WlrSeat::~WlrSeat() {
 	wlr_seat = NULL;
 }
 
-void WlrSeat::pointer_notify_enter(Object* _surface, double sx, double sy) {
-  if (auto surface = Object::cast_to<WlrSurface>(_surface)) {
+void WlrSeat::pointer_notify_enter(Ref<WlrSurface> surface, double sx, double sy) {
+  if (surface.is_valid()) {
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
   }
@@ -195,8 +195,8 @@ void WlrSeat::set_keyboard(Object* _keyboard) {
 	}
 }
 
-void WlrSeat::keyboard_notify_enter(Object* _surface) {
-  if (auto surface = Object::cast_to<WlrSurface>(_surface)) {
+void WlrSeat::keyboard_notify_enter(Ref<WlrSurface> surface) {
+  if (surface.is_valid()) {
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
 	wlr_seat_keyboard_notify_enter(wlr_seat, surface->get_wlr_surface(),
 		keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);

@@ -177,10 +177,6 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
   return new WlrXWaylandSurface(xwayland_surface);
 }
 
-void WlrXWaylandSurface::delete_wlr_xwayland_surface() {
-  delete this;
-}
-
 extern "C" {
 
 void WlrXWaylandSurface::handle_request_maximize(
@@ -385,7 +381,6 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"), &WlrXWaylandSurface::set_maximized);
 	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"), &WlrXWaylandSurface::set_fullscreen);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXWaylandSurface::send_close);
-	ClassDB::bind_method(D_METHOD("delete_wlr_xwayland_surface"), &WlrXWaylandSurface::delete_wlr_xwayland_surface);
 
 	ADD_SIGNAL(MethodInfo("request_maximize", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
