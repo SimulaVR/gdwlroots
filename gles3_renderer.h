@@ -1,6 +1,6 @@
-#ifndef GDWLR_GLES2_RENDERER_H
-#define GDWLR_GLES2_RENDERER_H
-#include "drivers/gles2/rasterizer_gles2.h"
+#ifndef GDWLR_GLES3_RENDERER_H
+#define GDWLR_GLES3_RENDERER_H
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "scene/resources/texture.h"
 #include "renderer.h"
 extern "C" {
@@ -10,7 +10,7 @@ extern "C" {
 #undef static
 }
 
-struct gles2_pixel_format {
+struct gles3_pixel_format {
 	enum wl_shm_format wl_format;
 	GLint gl_format, gl_type;
 	int depth, bpp;
@@ -18,24 +18,24 @@ struct gles2_pixel_format {
 	bool swizzle;
 };
 
-class WlrGLES2Texture : public Texture {
-	GDCLASS(WlrGLES2Texture, Texture);
+class WlrGLES3Texture : public Texture {
+	GDCLASS(WlrGLES3Texture, Texture);
 	RES_BASE_EXTENSION("wlrtex");
 
 	struct texture_state {
 		struct wlr_texture wlr_texture;
-		struct WlrGLES2Texture *godot_texture;
+		struct WlrGLES3Texture *godot_texture;
 	};
 	struct texture_state state;
 
-	const struct gles2_pixel_format *pixel_format;
-	RasterizerStorageGLES2 *storage;
+	const struct gles3_pixel_format *pixel_format;
+	RasterizerStorageGLES3 *storage;
 	RID texture;
 	int w, h;
 	uint32_t flags;
 
 public:
-	static WlrGLES2Texture *texture_from_wlr(struct wlr_texture *texture);
+	static WlrGLES3Texture *texture_from_wlr(struct wlr_texture *texture);
 
 	struct wlr_texture *get_wlr_texture();
 
@@ -54,18 +54,18 @@ public:
 	uint32_t get_flags() const;
 	void set_flags(uint32_t p_flags);
 
-	WlrGLES2Texture(RasterizerStorageGLES2 *storage,
+	WlrGLES3Texture(RasterizerStorageGLES3 *storage,
 			RID texture, int width, int height,
-			const struct gles2_pixel_format *pixel_format);
+			const struct gles3_pixel_format *pixel_format);
 };
 
-class WlrGLES2Renderer : public WlrRenderer {
-	RasterizerGLES2 *rasterizer;
+class WlrGLES3Renderer : public WlrRenderer {
+	RasterizerGLES3 *rasterizer;
 
 	/* Hack necessary for moving pointers between wlroots and godot */
 	struct renderer_state {
 		struct wlr_renderer wlr_renderer;
-		WlrGLES2Renderer *godot_renderer;
+		WlrGLES3Renderer *godot_renderer;
 	};
 
 	struct renderer_state renderer_state;
@@ -78,8 +78,8 @@ public:
 	virtual struct wlr_renderer *get_wlr_renderer();
 	virtual Texture *texture_from_wlr(struct wlr_texture *texture);
 
-	WlrGLES2Renderer(RasterizerGLES2 *rasterizer);
-	~WlrGLES2Renderer();
+	WlrGLES3Renderer(RasterizerGLES3 *rasterizer);
+	~WlrGLES3Renderer();
 };
 
 #endif

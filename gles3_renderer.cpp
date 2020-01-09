@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include "drivers/gles2/rasterizer_gles2.h"
-#include "drivers/gles2/rasterizer_storage_gles2.h"
-#include "gles2_renderer.h"
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/rasterizer_storage_gles3.h"
+#include "gles3_renderer.h"
 #include<string>
 #include <iostream>
 extern "C" {
@@ -11,6 +11,9 @@ extern "C" {
 #include <wlr/render/interface.h>
 #include <wlr/util/log.h>
 #undef static
+
+#define _GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+
 
 void saveScreenshotToFile(std::string filename, int windowWidth, int windowHeight) {
     const int numberOfPixels = windowWidth * windowHeight * 3;
@@ -38,7 +41,7 @@ static const enum wl_shm_format wl_formats[] = {
 	WL_SHM_FORMAT_XBGR8888,
 };
 
-static const struct gles2_pixel_format formats[] = {
+static const struct gles3_pixel_format formats[] = {
 	{
 		.wl_format = WL_SHM_FORMAT_ARGB8888,
 		.gl_format = GL_RGBA,
@@ -77,7 +80,7 @@ static const struct gles2_pixel_format formats[] = {
 	},
 };
 
-const struct gles2_pixel_format *get_gles2_format_from_wl(
+const struct gles3_pixel_format *get_gles3_format_from_wl(
 		enum wl_shm_format fmt) {
 	for (size_t i = 0; i < sizeof(formats) / sizeof(*formats); ++i) {
 		if (formats[i].wl_format == fmt) {
@@ -95,11 +98,11 @@ static const enum wl_shm_format *renderer_formats(
 
 static bool renderer_format_supported(
 		struct wlr_renderer *renderer, enum wl_shm_format fmt) {
-  //std::cout << "renderer_format_supported: " << get_gles2_format_from_wl(fmt) << std::endl;
-	return get_gles2_format_from_wl(fmt) != NULL;
+  //std::cout << "renderer_format_supported: " << get_gles3_format_from_wl(fmt) << std::endl;
+	return get_gles3_format_from_wl(fmt) != NULL;
 }
 
-const char *gles2_strerror(GLenum err) {
+const char *gles3_strerror(GLenum err) {
 	switch (err) {
 	case GL_INVALID_ENUM:
 		return "Invalid enum";
@@ -116,7 +119,7 @@ const char *gles2_strerror(GLenum err) {
 	}
 }
 
-static bool gles2_flush_errors(const char *context) {
+static bool gles3_flush_errors(const char *context) {
 	GLenum err;
 	bool failure = false;
 	while ((err = glGetError()) != GL_NO_ERROR) {
@@ -130,33 +133,33 @@ static bool gles2_flush_errors(const char *context) {
 			exit(1);
 		} else {
 			wlr_log(WLR_ERROR, "%s: GL error %d %s", context,
-					err, gles2_strerror(err));
+					err, gles3_strerror(err));
 		}
 	}
 	return failure;
 }
 
-struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
+struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 		struct wlr_renderer *_renderer, enum wl_shm_format wl_fmt,
 		uint32_t stride, uint32_t width, uint32_t height, const void *data) {
 
-	struct WlrGLES2Renderer::renderer_state *state =
-		(struct WlrGLES2Renderer::renderer_state *)_renderer;
-	WlrGLES2Renderer *renderer = state->godot_renderer;
+	struct WlrGLES3Renderer::renderer_state *state =
+		(struct WlrGLES3Renderer::renderer_state *)_renderer;
+	WlrGLES3Renderer *renderer = state->godot_renderer;
 	auto storage =
-		(RasterizerStorageGLES2 *)renderer->rasterizer->get_storage();
-	gles2_flush_errors(NULL);
+		(RasterizerStorageGLES3 *)renderer->rasterizer->get_storage();
+	gles3_flush_errors(NULL);
 
 	RID rid = storage->texture_create();
-	gles2_flush_errors("texture_create");
-	RasterizerStorageGLES2::Texture *texture =
+	gles3_flush_errors("texture_create");
+	RasterizerStorageGLES3::Texture *texture =
 		storage->texture_owner.getornull(rid);
 
 	storage->texture_allocate(rid, width, height, 0,
 			Image::FORMAT_RGBA8, VS::TEXTURE_TYPE_2D, 0);
-	gles2_flush_errors("texture_allocate");
+	gles3_flush_errors("texture_allocate");
 
-	const struct gles2_pixel_format *fmt = get_gles2_format_from_wl(wl_fmt);
+	const struct gles3_pixel_format *fmt = get_gles3_format_from_wl(wl_fmt);
 	if (fmt == NULL) {
 		wlr_log(WLR_ERROR, "Unsupported pixel format %" PRIu32, wl_fmt);
 		return NULL;
@@ -167,11 +170,12 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 
 	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameterf(texture->target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	gles2_flush_errors("glTexParameterf");
+	gles3_flush_errors("glTexParameterf");
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gles2_flush_errors("glPixelStorei");
+	gles3_flush_errors("glPixelStorei");
 
 	if (fmt->swizzle && fmt->has_alpha) {
 		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
@@ -183,16 +187,16 @@ struct wlr_texture *WlrGLES2Renderer::texture_from_pixels(
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
 
-  //glGenerateMipmap(texture->target); //Doesn't seem to cause mip maps to be generated
-  //glGenerateTextureMipmap(texture->tex_id);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 			GL_RGBA, fmt->gl_type, data);
-	gles2_flush_errors("glTexImage2D");
+	gles3_flush_errors("glTexImage2D");
+
+	glGenerateMipmap(texture->target);
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 
-	WlrGLES2Texture *wlr_texture = new WlrGLES2Texture(
+	WlrGLES3Texture *wlr_texture = new WlrGLES3Texture(
 			storage, rid, width, height, fmt);
 	wlr_texture->reference();
 	return wlr_texture->get_wlr_texture();
@@ -250,17 +254,17 @@ static const struct wlr_renderer_impl renderer_impl = {
 	/* We use these */
 	.formats = renderer_formats,
 	.format_supported = renderer_format_supported,
-	.texture_from_pixels = WlrGLES2Renderer::texture_from_pixels,
+	.texture_from_pixels = WlrGLES3Renderer::texture_from_pixels,
 	.init_wl_display = renderer_init_wl_display,
 };
 
 }
 
-struct wlr_renderer *WlrGLES2Renderer::get_wlr_renderer() {
+struct wlr_renderer *WlrGLES3Renderer::get_wlr_renderer() {
 	return &renderer_state.wlr_renderer;
 }
 
-WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
+WlrGLES3Renderer::WlrGLES3Renderer(RasterizerGLES3 *p_rasterizer) {
 	rasterizer = p_rasterizer;
 	wlr_renderer_init(&renderer_state.wlr_renderer, &renderer_impl);
 	renderer_state.godot_renderer = this;
@@ -269,38 +273,40 @@ WlrGLES2Renderer::WlrGLES2Renderer(RasterizerGLES2 *p_rasterizer) {
 
 extern "C" {
 
-void WlrGLES2Texture::wlr_texture_get_size(struct wlr_texture *_texture, int *width, int *height) {
-  WlrGLES2Texture *texture = WlrGLES2Texture::texture_from_wlr(_texture);
+void WlrGLES3Texture::wlr_texture_get_size(struct wlr_texture *_texture, int *width, int *height) {
+  WlrGLES3Texture *texture = WlrGLES3Texture::texture_from_wlr(_texture);
   if(texture) {
     *width = texture->w;
     *height = texture->h;
   }
 }
 
-bool WlrGLES2Texture::wlr_texture_write_pixels(
+bool WlrGLES3Texture::wlr_texture_write_pixels(
 		struct wlr_texture *_texture, uint32_t stride,
 		uint32_t width, uint32_t height,
 		uint32_t src_x, uint32_t src_y, uint32_t dst_x, uint32_t dst_y,
 		const void *data) {
-	WlrGLES2Texture *gles2_texture = WlrGLES2Texture::texture_from_wlr(
+	WlrGLES3Texture *gles3_texture = WlrGLES3Texture::texture_from_wlr(
 		_texture);
-	gles2_flush_errors(NULL);
+	gles3_flush_errors(NULL);
 
-	RasterizerStorageGLES2::Texture *texture =
-		gles2_texture->storage->texture_owner.getornull(gles2_texture->texture);
+	RasterizerStorageGLES3::Texture *texture =
+		gles3_texture->storage->texture_owner.getornull(gles3_texture->texture);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
 
 	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameterf(texture->target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	gles2_flush_errors("glTexParameterf");
+	
+	gles3_flush_errors("glTexParameterf");
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	gles2_flush_errors("glPixelStorei");
+	gles3_flush_errors("glPixelStorei");
 
-	const struct gles2_pixel_format *fmt = gles2_texture->pixel_format;
+	const struct gles3_pixel_format *fmt = gles3_texture->pixel_format;
 	if (fmt->swizzle) {
 		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
 		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
@@ -313,37 +319,39 @@ bool WlrGLES2Texture::wlr_texture_write_pixels(
 	glTexSubImage2D(GL_TEXTURE_2D, 0, dst_x, dst_y, width, height,
 		fmt->gl_format, fmt->gl_type, data);
 
+	glGenerateMipmap(texture->target);
+
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
 	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 	return true;
 }
 
-void WlrGLES2Texture::wlr_texture_destroy(struct wlr_texture *_texture) {
-	WlrGLES2Texture *texture = WlrGLES2Texture::texture_from_wlr(
+void WlrGLES3Texture::wlr_texture_destroy(struct wlr_texture *_texture) {
+	WlrGLES3Texture *texture = WlrGLES3Texture::texture_from_wlr(
 		_texture);
 	texture->unreference();
 }
 
 static const struct wlr_texture_impl texture_impl = {
-	.get_size = WlrGLES2Texture::wlr_texture_get_size,
-	.write_pixels = WlrGLES2Texture::wlr_texture_write_pixels,
-	.destroy = WlrGLES2Texture::wlr_texture_destroy,
+	.get_size = WlrGLES3Texture::wlr_texture_get_size,
+	.write_pixels = WlrGLES3Texture::wlr_texture_write_pixels,
+	.destroy = WlrGLES3Texture::wlr_texture_destroy,
 };
 
 }
 
-WlrGLES2Renderer::~WlrGLES2Renderer() {
+WlrGLES3Renderer::~WlrGLES3Renderer() {
 	wlr_renderer_destroy(&renderer_state.wlr_renderer);
 }
 
-Texture *WlrGLES2Renderer::texture_from_wlr(struct wlr_texture *texture) {
-	return WlrGLES2Texture::texture_from_wlr(texture);
+Texture *WlrGLES3Renderer::texture_from_wlr(struct wlr_texture *texture) {
+	return WlrGLES3Texture::texture_from_wlr(texture);
 }
 
-WlrGLES2Texture::WlrGLES2Texture(RasterizerStorageGLES2 *p_storage,
+WlrGLES3Texture::WlrGLES3Texture(RasterizerStorageGLES3 *p_storage,
 		RID p_texture, int width, int height,
-		const struct gles2_pixel_format *fmt) {
+		const struct gles3_pixel_format *fmt) {
 	wlr_texture_init(&state.wlr_texture, &texture_impl);
 	state.godot_texture = this;
 	storage = p_storage;
@@ -353,40 +361,40 @@ WlrGLES2Texture::WlrGLES2Texture(RasterizerStorageGLES2 *p_storage,
 	h = height;
 }
 
-int WlrGLES2Texture::get_width() const {
+int WlrGLES3Texture::get_width() const {
 	return w;
 }
 
-int WlrGLES2Texture::get_height() const {
+int WlrGLES3Texture::get_height() const {
 	return h;
 }
 
-RID WlrGLES2Texture::get_rid() const {
+RID WlrGLES3Texture::get_rid() const {
 	return texture;
 }
 
-bool WlrGLES2Texture::has_alpha() const {
+bool WlrGLES3Texture::has_alpha() const {
 	return pixel_format->has_alpha;
 }
 
-void WlrGLES2Texture::set_flags(uint32_t p_flags) {
+void WlrGLES3Texture::set_flags(uint32_t p_flags) {
 	// We manage our own flags, bugger off
 }
 
-uint32_t WlrGLES2Texture::get_flags() const {
+uint32_t WlrGLES3Texture::get_flags() const {
 	return flags;
 }
 
-struct wlr_texture *WlrGLES2Texture::get_wlr_texture() {
+struct wlr_texture *WlrGLES3Texture::get_wlr_texture() {
 	return &state.wlr_texture;
 }
 
-WlrGLES2Texture *WlrGLES2Texture::texture_from_wlr(
+WlrGLES3Texture *WlrGLES3Texture::texture_from_wlr(
 		struct wlr_texture *texture) {
 	if (texture == NULL) {
 		return NULL;
 	}
-	struct WlrGLES2Texture::texture_state *state =
-		(struct WlrGLES2Texture::texture_state *)texture;
+	struct WlrGLES3Texture::texture_state *state =
+		(struct WlrGLES3Texture::texture_state *)texture;
 	return state->godot_texture;
 }

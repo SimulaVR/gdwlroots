@@ -1,5 +1,5 @@
-#include "drivers/gles2/rasterizer_gles2.h"
-#include "gles2_renderer.h"
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "gles3_renderer.h"
 #include "servers/visual/visual_server_globals.h"
 #include "wayland_display.h"
 #include "wlr_backend.h"
@@ -71,10 +71,10 @@ void WlrBackend::_notification(int p_what) {
 
 WlrBackend::WlrBackend() {
 	wlr_log_init(WLR_DEBUG, NULL);
-	auto gles2_rasterizer = dynamic_cast<RasterizerGLES2 *>(VSG::rasterizer);
-	if (gles2_rasterizer != NULL) {
-		renderer = new WlrGLES2Renderer(gles2_rasterizer);
-	} else {
+	auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer);
+	if (auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer)) {
+		renderer = new WlrGLES3Renderer(gles3_rasterizer);
+       	} else {
 		print_line("Unsupported rasterizer backend");
 		assert(0);
 	}
