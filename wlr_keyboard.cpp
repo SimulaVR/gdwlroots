@@ -2,6 +2,7 @@
 #include <time.h>
 #include "core/object.h"
 #include "core/os/input_event.h"
+#include "core/os/keyboard.h"
 #include "keycode_map.h"
 #include "scene/main/node.h"
 #include "wlr_keyboard.h"
@@ -34,6 +35,8 @@ void WlrKeyboard::_bind_methods() {
 				"key_event", PROPERTY_HINT_RESOURCE_TYPE, "WlrEventKeyboardKey")));
 	ADD_SIGNAL(MethodInfo("modifiers", PropertyInfo(Variant::OBJECT,
 			"keyboard", PROPERTY_HINT_RESOURCE_TYPE, "WlrKeyboard")));
+  ADD_SIGNAL(MethodInfo("shortcut", PropertyInfo(Variant::INT,
+                                                 "godot_scancode"), PropertyInfo(Variant::BOOL, "is_pressed")));
 }
 
 extern "C" {
@@ -111,13 +114,19 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid()) {
-		struct wlr_event_keyboard_key event = { 0 };
-		event.time_msec = timespec_to_msec(&now);
-		event.keycode = eudev_from_godot(k->get_scancode()); //old
-    //event.keycode = k->get_raw_keycode(); //Attempt to use David hack; causes weird keyboard behavior
-		event.state = k->is_pressed() ? WLR_KEY_PRESSED : WLR_KEY_RELEASED;
-		event.update_state = true;
-		wlr_keyboard_notify_key(&wlr_keyboard, &event);
+    int scancode = k->get_scancode_with_modifiers();
+
+    if(((scancode & KEY_MASK_META) != 0)) {
+      this->emit_signal("shortcut", scancode, k->is_pressed());
+    } else {
+      struct wlr_event_keyboard_key event = { 0 };
+      event.time_msec = timespec_to_msec(&now);
+      event.keycode = eudev_from_godot(k->get_scancode()); //old
+      //event.keycode = k->get_raw_keycode(); //Attempt to use David hack; causes weird keyboard behavior
+      event.state = k->is_pressed() ? WLR_KEY_PRESSED : WLR_KEY_RELEASED;
+      event.update_state = true;
+      wlr_keyboard_notify_key(&wlr_keyboard, &event);
+    }
 	}
 }
 

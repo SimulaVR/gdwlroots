@@ -94,6 +94,7 @@ void WlrXWayland::ensure_wl_global(WaylandDisplay *display) {
 }
 
 void WlrXWayland::destroy_wl_global(WaylandDisplay *display) {
+  //std::cout << "WlrXWayland::destroy_wl_global" << std::endl;
 	wlr_xwayland_destroy(wlr_xwayland);
 	wlr_xwayland = NULL;
 }
@@ -103,8 +104,13 @@ WlrXWayland::WlrXWayland() {
 }
 
 WlrXWayland::~WlrXWayland() {
+  //std::cout << "WlrXWayland::~WlrXWayland" << std::endl;
 	wlr_xwayland_destroy(wlr_xwayland);
 	wlr_xwayland = NULL;
+}
+
+void WlrXWaylandSurface::terminate() {
+  kill(wlr_xwayland_surface->pid, SIGTERM);
 }
 
 Rect2 WlrXWaylandSurface::get_geometry() {
@@ -128,6 +134,7 @@ extern "C" {
 
 void WlrXWaylandSurface::handle_destroy(
     struct wl_listener *listener, void *data) {
+  //std::cout << "WlrXWaylandSurface::handle_destroy" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, destroy);
 
@@ -367,6 +374,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_height"), &WlrXWaylandSurface::get_height);
 	ClassDB::bind_method(D_METHOD("get_x"), &WlrXWaylandSurface::get_x);
 	ClassDB::bind_method(D_METHOD("get_y"), &WlrXWaylandSurface::get_y);
+	ClassDB::bind_method(D_METHOD("terminate"), &WlrXWaylandSurface::terminate);
 	ClassDB::bind_method(D_METHOD("print_xwayland_surface_properties"), &WlrXWaylandSurface::print_xwayland_surface_properties);
 	ClassDB::bind_method(D_METHOD("get_min_width"), &WlrXWaylandSurface::get_min_width);
 	ClassDB::bind_method(D_METHOD("get_min_height"), &WlrXWaylandSurface::get_min_height);

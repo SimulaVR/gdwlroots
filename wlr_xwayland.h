@@ -105,6 +105,7 @@ class WlrXWaylandSurface: public Resource {
 	String get_title() const;
 	/* String get_app_id() const; */
 
+	void terminate();
 	void set_size(Vector2 size);
 	void set_activated(bool activated);
 	void set_maximized(bool maximized);
