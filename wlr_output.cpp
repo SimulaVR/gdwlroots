@@ -39,7 +39,7 @@ void WlrOutput::_size_changed() {
 	if (wlr_output == NULL) {
 		return;
 	}
-  wlr_output_update_custom_mode(wlr_output, 1280, 720, 6000); //1024x768
+  wlr_output_update_custom_mode(wlr_output, 2560, 1440, 90000); //1024x768
 }
 
 void WlrOutput::_bind_methods() {
@@ -81,10 +81,10 @@ void WlrOutput::_notification(int p_what) {
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE:
 		viewport = get_tree()->get_root();
-		viewport->connect("size_changed", this, "_size_changed");
+//		viewport->connect("size_changed", this, "_size_changed");
 		break;
 	case NOTIFICATION_EXIT_TREE:
-		viewport->disconnect("size_changed", this, "_size_changed");
+//		viewport->disconnect("size_changed", this, "_size_changed");
 		break;
 	}
 	WaylandGlobal::_notification(p_what);
