@@ -115,8 +115,13 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid()) {
     int scancode = k->get_scancode_with_modifiers();
+    // std::cout << "scancode: " << scancode << std::endl;
+    // std::cout << "scancode & KEY_MASK_META: " << (scancode & KEY_MASK_META) << std::endl;
 
-    if(((scancode & KEY_MASK_META) != 0)) {
+    if (scancode == KEY_SUPER_L || scancode == KEY_SUPER_R) {
+      //We absorb the KEY_SUPER_* keys to avoid typing bugs.
+    }
+    else if(((scancode & KEY_MASK_META) != 0)) {
       this->emit_signal("shortcut", scancode, k->is_pressed());
     } else {
       struct wlr_event_keyboard_key event = { 0 };
