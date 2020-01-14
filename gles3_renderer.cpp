@@ -169,7 +169,7 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
 
-	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(texture->target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -205,12 +205,6 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 }
 
 static void generateMipmaps(RasterizerStorageGLES3::Texture* texture, int width, int height, int level) {
-	gles3_flush_errors("unknown");
-	glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-	gles3_flush_errors("glHint");
-	glBindTexture(texture->target, texture->tex_id);
-	glGenerateMipmap(texture->target);
-	gles3_flush_errors("glGenerateMipmap");
 	return;
 }
 
@@ -308,7 +302,7 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
 
-	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(texture->target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(texture->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(texture->target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

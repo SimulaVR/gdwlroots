@@ -70,7 +70,7 @@ void WlrBackend::_notification(int p_what) {
 }
 
 WlrBackend::WlrBackend() {
-	wlr_log_init(WLR_DEBUG, NULL);
+	wlr_log_init(WLR_ERROR, NULL);
 	auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer);
 	if (auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer)) {
 		renderer = new WlrGLES3Renderer(gles3_rasterizer);
