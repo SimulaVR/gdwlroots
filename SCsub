@@ -1,13 +1,8 @@
 # SCsub
 Import('env')
-
-env.Append(LIBPATH=['#modules/gdwlroots'])
-env.Append(LIBS=['wlroots', "wlr_types", "wlr_xcursor", "wlr_xwayland", "wlr_backend", "wlr_backend_x11", "wlr_render", "wlr_util",  "wl_protos", "xcb", "pixman-1", "dbus-1", "systemd", "EGL",
-  "input", "udev", "gbm", "drm", "wayland-egl", "wayland-client", "wayland-server", "xcb-composite", "xcb-xfixes",  "xcb-render", "xcb-shm", "xcb-icccm",  "xcb-xinput", "cap", "rt", "X11-xcb"])
-
 env.ParseConfig("pkg-config xkbcommon --cflags --libs")
+env.ParseConfig("pkg-config wlroots --cflags --libs")
 env.ParseConfig("pkg-config wayland-server --cflags --libs")
-env.ParseConfig('pkg-config wlroots --cflags')
 
 srcs = [
     "gles3_renderer.cpp",
@@ -38,6 +33,3 @@ module_env.add_source_files(env.modules_sources, srcs + [
 ])
 
 module_env.Append(CXXFLAGS=['-DWLR_USE_UNSTABLE', '-Imodules/gdwlroots/'])
-
-
-# env.Dependency(target = 'wlroots', dependency = 'xkbcommon wayland-server')
