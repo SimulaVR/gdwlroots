@@ -5,16 +5,17 @@ env.ParseConfig("pkg-config wlroots --cflags --libs")
 env.ParseConfig("pkg-config wayland-server --cflags --libs")
 
 env.ParseConfig('pkg-config pixman-1 --cflags')
+env.ParseConfig('pkg-config libudev --cflags')
 env.ParseConfig('pkg-config xcb --cflags')
 env.ParseConfig('pkg-config dbus-1 --cflags')
-env.ParseConfig('pkg-config systemd --cflags')
-env.ParseConfig('pkg-config udev --cflags')
-env.ParseConfig('pkg-config gbm --cflags')
-env.ParseConfig('pkg-config wayland-egl --cflags')
-env.ParseConfig('pkg-config wayland-client --cflags')
-env.ParseConfig('pkg-config xcb-composite --cflags')
-env.ParseConfig('pkg-config xcb-render --cflags')
-env.ParseConfig('pkg-config xcb-shm --cflags')
+
+# env.ParseConfig('pkg-config systemd --cflags') #
+# env.ParseConfig('pkg-config gbm --cflags') #
+# env.ParseConfig('pkg-config wayland-egl --cflags')
+# env.ParseConfig('pkg-config wayland-client --cflags')
+# env.ParseConfig('pkg-config xcb-composite --cflags')
+# env.ParseConfig('pkg-config xcb-render --cflags')
+# env.ParseConfig('pkg-config xcb-shm --cflags')
 # env.ParseConfig('pkg-config xcb-icccm --cflags')
 
 # env.ParseConfig('pkg-config X11-xcb --cflags')
