@@ -79,6 +79,30 @@ Ref<Texture> WlrSurface::get_texture() const {
 			WlrRenderer::get_singleton()->texture_from_wlr(texture));
 }
 
+Array WlrSurface::get_damage_regions() const {
+	pixman_region32_t* dmg = &this->wlr_surface->buffer_damage;
+	int len = -1;
+	pixman_box32_t* rects =	pixman_region32_rectangles(dmg, &len);
+
+	Array out;
+
+	for (int i = 0; i < len; i++) {
+		real_t x1 = rects[i].x1;
+		real_t x2 = rects[i].x2;
+		real_t y1 = rects[i].y1;
+		real_t y2 = rects[i].y2;
+
+		real_t w = x2 - x1;
+		real_t h = y2 - y1;
+		
+		Rect2 gRect(x1, y1, w, h);
+
+		out.push_back(gRect);
+	}
+
+	return out;
+}
+
 void WlrSurface::send_frame_done() {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -114,6 +138,8 @@ void WlrSurface::_bind_methods() {
 			&WlrSurface::alloc_previous_state);
 	ClassDB::bind_method(D_METHOD("get_texture"),
 			&WlrSurface::get_texture);
+	ClassDB::bind_method(D_METHOD("get_damage_regions"),
+			&WlrSurface::get_damage_regions);
 	ClassDB::bind_method(D_METHOD("send_frame_done"),
 			&WlrSurface::send_frame_done);
 
