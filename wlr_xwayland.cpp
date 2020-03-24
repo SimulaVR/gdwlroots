@@ -266,11 +266,21 @@ String WlrXWaylandSurface::get_title() const {
 }
 
 void WlrXWaylandSurface::set_size(Vector2 size) {
-  wlr_xwayland_surface_configure(wlr_xwayland_surface,
-                                wlr_xwayland_surface->x,
-                                wlr_xwayland_surface->y,
-                                size.width,
-                                size.height);
+  if(output_move) {
+    output_move = false;
+   wlr_xwayland_surface_configure(wlr_xwayland_surface,
+                                 wlr_xwayland_surface->x + 1,
+                                 wlr_xwayland_surface->y + 1,
+                                 size.width,
+                                 size.height);
+  } else {
+    output_move = true;
+    wlr_xwayland_surface_configure(wlr_xwayland_surface,
+                                   wlr_xwayland_surface->x - 1,
+                                   wlr_xwayland_surface->y - 1,
+                                   size.width,
+                                   size.height);
+  }
 }
 
 
@@ -350,7 +360,7 @@ Array WlrXWaylandSurface::get_children() {
   children.clear();
 
   wl_list_for_each(xws, &wlr_xwayland_surface->children, parent_link) {
-    if (xws->data) {
+    if (xws->data && xws->mapped) {
       WlrXWaylandSurface * xWS;
       xWS = (WlrXWaylandSurface *)xws->data; //Only return children for whom we have WlrXWaylandSurface's formed already
       Variant _xWS = Variant( (Object *) xWS );

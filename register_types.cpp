@@ -30,6 +30,7 @@ void register_gdwlroots_types() {
 	ClassDB::register_class<WlrXdgPopup>();
 	ClassDB::register_class<WlrXWayland>();
 	ClassDB::register_class<WlrXWaylandSurface>();
+	ClassDB::register_class<WlrSubsurface>();
 }
 
 void unregister_gdwlroots_types() {

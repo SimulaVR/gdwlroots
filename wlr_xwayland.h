@@ -27,6 +27,8 @@ class WlrXWaylandSurface: public Resource {
   GDCLASS(WlrXWaylandSurface, Resource);
   struct wlr_xwayland_surface *wlr_xwayland_surface;
 
+  bool output_move;
+
 	static void handle_request_maximize(
 			struct wl_listener *listener, void *data);
 	static void handle_request_fullscreen(struct wl_listener *listener, void *data);
