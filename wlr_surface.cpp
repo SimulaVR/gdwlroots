@@ -73,6 +73,38 @@ void WlrSurfaceState::delete_state() {
   delete this;
 }
 
+Array WlrSurface::get_damage_regions() const {
+	Array out;
+
+	if (!wlr_surface_has_buffer(this->wlr_surface)) {
+		return out;
+  }
+
+	pixman_region32_t dmg;
+	pixman_region32_init(&dmg);
+	wlr_surface_get_effective_damage(this->wlr_surface, &dmg);
+	int len = -1;
+	pixman_box32_t* rects =	pixman_region32_rectangles(&dmg, &len);
+
+
+	for (int i = 0; i < len; i++) {
+		real_t x1 = rects[i].x1;
+		real_t x2 = rects[i].x2;
+		real_t y1 = rects[i].y1;
+		real_t y2 = rects[i].y2;
+
+		real_t w = x2 - x1;
+		real_t h = y2 - y1;
+
+		Rect2 gRect(x1, y1, w, h);
+
+		out.push_back(gRect);
+	}
+
+	pixman_region32_fini(&dmg);
+	return out;
+}
+
 Ref<Texture> WlrSurface::get_texture() const {
 	struct wlr_texture *texture = wlr_surface_get_texture(wlr_surface);
 	return Ref<Texture>(
@@ -114,6 +146,8 @@ void WlrSurface::_bind_methods() {
 			&WlrSurface::alloc_previous_state);
 	ClassDB::bind_method(D_METHOD("get_texture"),
 			&WlrSurface::get_texture);
+	ClassDB::bind_method(D_METHOD("get_damage_regions"),
+			&WlrSurface::get_damage_regions);
 	ClassDB::bind_method(D_METHOD("send_frame_done"),
 			&WlrSurface::send_frame_done);
 

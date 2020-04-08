@@ -49,6 +49,7 @@ public:
 	WlrSurfaceState *alloc_pending_state() const;
 	WlrSurfaceState *alloc_previous_state() const;
 	Ref<Texture> get_texture() const;
+	Array get_damage_regions() const;
 	void send_frame_done();
 
   Array get_children();
