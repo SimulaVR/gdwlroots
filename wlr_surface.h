@@ -26,18 +26,17 @@ public:
   void delete_state();
 
 	WlrSurfaceState(const struct wlr_surface_state *state);
+
 };
 
 class WlrSurface : public Resource {
 	GDCLASS(WlrSurface, Resource);
 
 	struct wlr_surface *wlr_surface;
+  Array children;
 
 protected:
 	static void _bind_methods();
-
-	WlrSurface(); // Necessary for Object
-	WlrSurface(struct wlr_surface *surface);
 
 public:
 	static WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
@@ -51,6 +50,42 @@ public:
 	WlrSurfaceState *alloc_previous_state() const;
 	Ref<Texture> get_texture() const;
 	void send_frame_done();
+
+  Array get_children();
+
+	WlrSurface(); // Necessary for Object
+	WlrSurface(struct wlr_surface *surface);
+};
+
+class WlrSubsurface : public Resource {
+	GDCLASS(WlrSubsurface, Resource);
+
+	struct wlr_subsurface *wlr_subsurface;
+  Array children;
+
+ protected:
+	static void _bind_methods();
+
+	WlrSubsurface(); // Necessary for Object
+	WlrSubsurface(struct wlr_subsurface *subsurface);
+
+ public:
+
+	WlrSubsurface *from_wlr_subsurface(struct wlr_subsurface *wlr_subsurface);
+
+	WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
+
+	WlrSurface *getWlrSurface();
+
+	struct wlr_subsurface *get_wlr_subsurface() const;
+
+	int get_ssx();
+	int get_ssy();
+
+	Ref<Texture> get_texture() const;
+
+  Array get_children();
+
 };
 
 class WlrSurfaceAtResult : public Reference {

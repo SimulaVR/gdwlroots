@@ -160,6 +160,8 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 			Image::FORMAT_RGBA8, VS::TEXTURE_TYPE_2D, 0);
 	gles3_flush_errors("texture_allocate");
 
+  texture->data_size = width * height * 4; //for savePng
+
 	const struct gles3_pixel_format *fmt = get_gles3_format_from_wl(wl_fmt);
 	if (fmt == NULL) {
 		wlr_log(WLR_ERROR, "Unsupported pixel format %" PRIu32, wl_fmt);
@@ -307,7 +309,7 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 	glTexParameterf(texture->target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(texture->target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	
+
 	gles3_flush_errors("glTexParameterf");
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	gles3_flush_errors("glPixelStorei");
@@ -325,7 +327,7 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 	glTexSubImage2D(GL_TEXTURE_2D, 0, dst_x, dst_y, width, height,
 		fmt->gl_format, fmt->gl_type, data);
 
-        
+
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);

@@ -350,7 +350,7 @@ Array WlrXWaylandSurface::get_children() {
   children.clear();
 
   wl_list_for_each(xws, &wlr_xwayland_surface->children, parent_link) {
-    if (xws->data) {
+    if (xws->data && xws->mapped) {
       WlrXWaylandSurface * xWS;
       xWS = (WlrXWaylandSurface *)xws->data; //Only return children for whom we have WlrXWaylandSurface's formed already
       Variant _xWS = Variant( (Object *) xWS );

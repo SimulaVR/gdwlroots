@@ -85,6 +85,24 @@ void WlrSurface::send_frame_done() {
 	wlr_surface_send_frame_done(wlr_surface, &now);
 }
 
+Array WlrSurface::get_children() {
+  struct wlr_subsurface *subsurface;
+
+  children.clear();
+
+  wl_list_for_each(subsurface, &wlr_surface->subsurfaces, parent_link) {
+
+    WlrSubsurface * wS;
+    wS = (WlrSubsurface *)subsurface->data; //Only return children for whom we have WlrSubsurface's formed already
+    Variant _wS = Variant( (Object *) wS );
+    children.push_front(_wS);
+
+    }
+
+  return children;
+}
+
+
 void WlrSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sx"), &WlrSurface::get_sx);
 	ClassDB::bind_method(D_METHOD("get_sy"), &WlrSurface::get_sy);
@@ -98,6 +116,8 @@ void WlrSurface::_bind_methods() {
 			&WlrSurface::get_texture);
 	ClassDB::bind_method(D_METHOD("send_frame_done"),
 			&WlrSurface::send_frame_done);
+
+	ClassDB::bind_method(D_METHOD("get_children"), &WlrSurface::get_children);
 }
 
 WlrSurface::WlrSurface() {
@@ -150,4 +170,76 @@ WlrSurfaceAtResult::WlrSurfaceAtResult(WlrSurface *surface,
 	this->surface = surface;
 	this->sub_x = sub_x;
 	this->sub_y = sub_y;
+}
+
+WlrSubsurface::WlrSubsurface() {
+	/* Not used */
+}
+
+WlrSubsurface::WlrSubsurface(struct wlr_subsurface *subsurface) {
+	wlr_subsurface = subsurface;
+	subsurface->data = this;
+}
+
+WlrSubsurface *WlrSubsurface::from_wlr_subsurface(struct wlr_subsurface *subsurface) {
+	if (!subsurface) {
+		return NULL;
+	}
+	if (subsurface->data) {
+		auto s = (WlrSubsurface *)subsurface->data;
+		return s;
+	}
+	return new WlrSubsurface(subsurface);
+}
+
+struct wlr_subsurface *WlrSubsurface::get_wlr_subsurface() const {
+	return wlr_subsurface;
+}
+
+int WlrSubsurface::get_ssx() {
+
+  return wlr_subsurface->current.x;
+}
+
+int WlrSubsurface::get_ssy() {
+  return wlr_subsurface->current.y;
+}
+
+Ref<Texture> WlrSubsurface::get_texture() const {
+  struct wlr_surface * surface = wlr_subsurface->surface;
+	struct wlr_texture *texture = wlr_surface_get_texture(surface);
+	return Ref<Texture>(
+			WlrRenderer::get_singleton()->texture_from_wlr(texture));
+}
+
+
+WlrSurface *WlrSubsurface::from_wlr_surface(struct wlr_surface *surface) {
+	if (!surface) {
+		return NULL;
+	}
+	if (surface->data) {
+		auto s = (WlrSurface *)surface->data;
+		return s;
+	}
+	return new WlrSurface(surface);
+}
+
+WlrSurface *WlrSubsurface::getWlrSurface() {
+  return from_wlr_surface(wlr_subsurface->surface);
+}
+
+Array WlrSubsurface::get_children() {
+  struct wlr_surface * surface = wlr_subsurface->surface;
+  WlrSurface * surface_ = from_wlr_surface(surface);
+  return surface_->get_children();
+}
+
+void WlrSubsurface::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_ssx"), &WlrSubsurface::get_ssx);
+	ClassDB::bind_method(D_METHOD("get_ssy"), &WlrSubsurface::get_ssy);
+	ClassDB::bind_method(D_METHOD("get_texture"),
+			&WlrSubsurface::get_texture);
+	ClassDB::bind_method(D_METHOD("getWlrSurface"), &WlrSubsurface::getWlrSurface);
+
+	ClassDB::bind_method(D_METHOD("get_children"), &WlrSubsurface::get_children);
 }
