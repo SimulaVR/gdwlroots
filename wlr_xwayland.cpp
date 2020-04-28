@@ -25,11 +25,21 @@ extern "C" {
 
 //We override xwayland.h to avoid the `class` keyword
 #include "xwayland.h" //as opposed to: <wlr/xwayland.h>
+#include <xwayland/xwm.h>
 
-#include <xcb/composite.h>
-#include <xcb/render.h>
-#include <xcb/xfixes.h>
-#include <xcb/xproto.h>
+}
+
+bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
+												size_t num_atoms, enum atom_name needle) {
+	xcb_atom_t atom = xwm->atoms[needle];
+
+	for (size_t i = 0; i < num_atoms; ++i) {
+		if (atom == atoms[i]) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, void *data) {
@@ -149,16 +159,20 @@ void WlrXWaylandSurface::handle_destroy(
   xwayland_surface->emit_signal("destroy", xwayland_surface); //We `delete` this surface elsewhere
 }
 
-void WlrXWaylandSurface::handle_map(
-    struct wl_listener *listener, void *data) {
-  WlrXWaylandSurface *xwayland_surface = wl_container_of(
-      listener, xwayland_surface, map);
+void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
+		WlrXWaylandSurface *xwayland_surface = wl_container_of(
+																													 listener, xwayland_surface, map);
 
-  // Attempt to only map parent surfaces (fails for some programs though, including google-chrome)
-  if( xwayland_surface->wlr_xwayland_surface->parent == NULL ) { // Perhaps also: wl_list_length(&xwayland_surface->wlr_xwayland_surface->parent_link) > 0 ?
-    // xwayland_surface->print_xwayland_surface_properties();
-    xwayland_surface->emit_signal("map", xwayland_surface);
-  }
+		bool is_parent_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_NORMAL);
+
+		if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_parent_surface) ) {
+			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_parent_surface ) {
+			xwayland_surface->emit_signal("map", xwayland_surface);
+		}
 }
 
 void WlrXWaylandSurface::handle_unmap(
@@ -393,6 +407,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("request_maximize", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("map_free_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("surface_commit", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("request_fullscreen", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"), PropertyInfo(Variant::BOOL, "fullscreen")));
