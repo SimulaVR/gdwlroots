@@ -50,6 +50,7 @@ public:
 	~WlrKeyboard();
 
 	struct wlr_input_device *get_wlr_input_device();
+	void send_wlr_event_keyboard_key(int scancode_without_modifiers, bool is_pressed);
 };
 
 #endif

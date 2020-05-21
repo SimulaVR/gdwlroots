@@ -29,6 +29,9 @@ void WlrKeyboard::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_input", "event"),
 			&WlrKeyboard::_input);
 
+	ClassDB::bind_method(D_METHOD("send_wlr_event_keyboard_key", "scancode_without_modifiers", "is_pressed"),
+											 &WlrKeyboard::send_wlr_event_keyboard_key);
+
 	ADD_SIGNAL(MethodInfo("key", PropertyInfo(Variant::OBJECT,
 				"keyboard", PROPERTY_HINT_RESOURCE_TYPE, "WlrKeyboard"),
 			PropertyInfo(Variant::OBJECT,
@@ -110,21 +113,30 @@ static inline int64_t timespec_to_msec(const struct timespec *a) {
 }
 
 void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
+
+	Ref<InputEventKey> k = p_event;
+	if (k.is_valid()) {
+		int scancode_with_modifiers = k->get_scancode_with_modifiers();
+		this->emit_signal("shortcut", scancode_with_modifiers, k->is_pressed());
+	}
+
+	/*
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid()) {
-    int scancode = k->get_scancode_with_modifiers();
+    int scancode_with_modifiers = k->get_scancode_with_modifiers();
     //std::cout << "scancode: " << scancode << std::endl;
     // std::cout << "scancode & KEY_MASK_META: " << (scancode & KEY_MASK_META) << std::endl;
 
-    if (scancode == KEY_SUPER_L || scancode == KEY_SUPER_R) {
+    if (scancode_with_modifiers == KEY_SUPER_L || scancode_with_modifiers == KEY_SUPER_R) {
       //std::cout << "1" << std::endl;
       //We absorb the KEY_SUPER_* keys to avoid typing bugs.
     }
-    else if(((scancode & KEY_MASK_META) != 0)) {
+    else if(((scancode_with_modifiers & KEY_MASK_META) != 0)) {
+
       //std::cout << "2" << std::endl;
-      this->emit_signal("shortcut", scancode, k->is_pressed());
+      this->emit_signal("shortcut", scancode_with_modifiers, k->is_pressed());
     } else {
       //std::cout << "3" << std::endl;
       struct wlr_event_keyboard_key event = { 0 };
@@ -136,7 +148,21 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
       wlr_keyboard_notify_key(&wlr_keyboard, &event);
     }
 	}
+	*/
 }
+
+void WlrKeyboard::send_wlr_event_keyboard_key(int scancode_without_modifiers, bool is_pressed) {
+  struct wlr_event_keyboard_key event = { 0 };
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+  event.time_msec = timespec_to_msec(&now);
+  event.keycode = eudev_from_godot(scancode_without_modifiers);
+  event.state = is_pressed ? WLR_KEY_PRESSED : WLR_KEY_RELEASED;
+  event.update_state = true;
+  wlr_keyboard_notify_key(&wlr_keyboard, &event);
+}
+
 
 struct wlr_input_device *WlrKeyboard::get_wlr_input_device() {
   //cout << "*WlrKeyboard::get_wlr_input_device" << endl;
