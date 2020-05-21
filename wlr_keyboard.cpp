@@ -119,36 +119,6 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
 		int scancode_with_modifiers = k->get_scancode_with_modifiers();
 		this->emit_signal("shortcut", scancode_with_modifiers, k->is_pressed());
 	}
-
-	/*
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	Ref<InputEventKey> k = p_event;
-	if (k.is_valid()) {
-    int scancode_with_modifiers = k->get_scancode_with_modifiers();
-    //std::cout << "scancode: " << scancode << std::endl;
-    // std::cout << "scancode & KEY_MASK_META: " << (scancode & KEY_MASK_META) << std::endl;
-
-    if (scancode_with_modifiers == KEY_SUPER_L || scancode_with_modifiers == KEY_SUPER_R) {
-      //std::cout << "1" << std::endl;
-      //We absorb the KEY_SUPER_* keys to avoid typing bugs.
-    }
-    else if(((scancode_with_modifiers & KEY_MASK_META) != 0)) {
-
-      //std::cout << "2" << std::endl;
-      this->emit_signal("shortcut", scancode_with_modifiers, k->is_pressed());
-    } else {
-      //std::cout << "3" << std::endl;
-      struct wlr_event_keyboard_key event = { 0 };
-      event.time_msec = timespec_to_msec(&now);
-      event.keycode = eudev_from_godot(k->get_scancode()); //old
-      //event.keycode = k->get_raw_keycode(); //Attempt to use David hack; causes weird keyboard behavior
-      event.state = k->is_pressed() ? WLR_KEY_PRESSED : WLR_KEY_RELEASED;
-      event.update_state = true;
-      wlr_keyboard_notify_key(&wlr_keyboard, &event);
-    }
-	}
-	*/
 }
 
 void WlrKeyboard::send_wlr_event_keyboard_key(int scancode_without_modifiers, bool is_pressed) {
