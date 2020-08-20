@@ -55,8 +55,7 @@ void WlrXWayland::handle_new_xwayland_surface(
 		struct wl_listener *listener, void *data) {
   WlrXWayland *xwayland = wl_container_of(
 			listener, xwayland, new_xwayland_surface);
-	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface(
-      (struct wlr_xwayland_surface *)data);
+	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface((struct wlr_xwayland_surface *)data);
 
 	xwayland->emit_signal("new_surface", surface);
 }
@@ -172,6 +171,8 @@ void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
 			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
 		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_parent_surface ) {
 			xwayland_surface->emit_signal("map", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_parent_surface ) {
+			xwayland_surface->emit_signal("map_child", xwayland_surface);
 		}
 }
 
@@ -287,6 +288,14 @@ void WlrXWaylandSurface::set_size(Vector2 size) {
                                 size.height);
 }
 
+void WlrXWaylandSurface::set_xy(Vector2 xy) {
+  wlr_xwayland_surface_configure(wlr_xwayland_surface,
+																 xy.width,
+																 xy.height,
+																 wlr_xwayland_surface->width,
+																 wlr_xwayland_surface->height);
+}
+
 
 void WlrXWaylandSurface::set_activated(bool activated) {
   //wlr_xwayland_or_surface_wants_focus(wlr_xwayland_surface);
@@ -314,7 +323,7 @@ bool WlrXWaylandSurface::get_fullscreen() const {
   return wlr_xwayland_surface->fullscreen;
 }
 
-uint32_t WlrXWaylandSurface::get_width() const {
+uint16_t WlrXWaylandSurface::get_width() const {
   return wlr_xwayland_surface->width;
 }
 
@@ -322,39 +331,41 @@ String WlrXWaylandSurface::get_role() const {
   return wlr_xwayland_surface->role;
 }
 
-uint32_t WlrXWaylandSurface::get_x() const {
+int16_t WlrXWaylandSurface::get_x() const {
   return wlr_xwayland_surface->x;
 }
 
-uint32_t WlrXWaylandSurface::get_y() const {
+int16_t WlrXWaylandSurface::get_y() const {
   return wlr_xwayland_surface->y;
 }
 
 void WlrXWaylandSurface::print_xwayland_surface_properties() {
-    // std::cout << "wlr_xwayland_surface->c_class: " << wlr_xwayland_surface->c_class << std::endl;
-    // std::cout << "wlr_xwayland_surface->instance: " << wlr_xwayland_surface->instance << std::endl;
-    // std::cout << "wlr_xwayland_surface->role: " << wlr_xwayland_surface->role << std::endl;
-    // std::cout << "wl_list_length(&wlr_xwayland_surface->parent_link): " << wl_list_length(&wlr_xwayland_surface->parent_link) << std::endl;
-    // std::cout << "wlr_xwayland_surface->window_type: " << wlr_xwayland_surface->window_type << std::endl;
+    std::cout << "wlr_xwayland_surface->c_class: " << wlr_xwayland_surface->c_class << std::endl;
+    std::cout << "wlr_xwayland_surface->instance: " << wlr_xwayland_surface->instance << std::endl;
+    std::cout << "wlr_xwayland_surface->role: " << wlr_xwayland_surface->role << std::endl;
+    std::cout << "wl_list_length(&wlr_xwayland_surface->parent_link): " << wl_list_length(&wlr_xwayland_surface->parent_link) << std::endl;
+    std::cout << "wlr_xwayland_surface->window_type: " << wlr_xwayland_surface->window_type << std::endl;
+    std::cout << "wlr_xwayland_surface->protocols: " << wlr_xwayland_surface->protocols << std::endl;
+    std::cout << "wlr_xwayland_surface->override_redirect: " << wlr_xwayland_surface->override_redirect << std::endl;
 }
 
-uint32_t WlrXWaylandSurface::get_height() const {
+uint16_t WlrXWaylandSurface::get_height() const {
   return wlr_xwayland_surface->height;
 }
 
-uint32_t WlrXWaylandSurface::get_min_width() const {
+uint16_t WlrXWaylandSurface::get_min_width() const {
   return wlr_xwayland_surface->size_hints->min_width;
 }
 
-uint32_t WlrXWaylandSurface::get_min_height() const {
+uint16_t WlrXWaylandSurface::get_min_height() const {
   return wlr_xwayland_surface->size_hints->min_height;
 }
 
-uint32_t WlrXWaylandSurface::get_max_width() const {
+uint16_t WlrXWaylandSurface::get_max_width() const {
   return wlr_xwayland_surface->size_hints->max_width;
 }
 
-uint32_t WlrXWaylandSurface::get_max_height() const {
+uint16_t WlrXWaylandSurface::get_max_height() const {
   return wlr_xwayland_surface->size_hints->max_height;
 }
 
@@ -398,6 +409,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXWaylandSurface::get_parent);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXWaylandSurface::get_title);
 	ClassDB::bind_method(D_METHOD("set_size", "size"), &WlrXWaylandSurface::set_size);
+	ClassDB::bind_method(D_METHOD("set_xy", "size"), &WlrXWaylandSurface::set_xy);
 	ClassDB::bind_method(D_METHOD("set_activated", "activated"), &WlrXWaylandSurface::set_activated);
 	ClassDB::bind_method(D_METHOD("get_maximized"), &WlrXWaylandSurface::get_maximized);
 	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"), &WlrXWaylandSurface::set_maximized);
@@ -408,6 +420,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map_free_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("map_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("surface_commit", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("request_fullscreen", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"), PropertyInfo(Variant::BOOL, "fullscreen")));

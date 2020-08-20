@@ -88,15 +88,15 @@ class WlrXWaylandSurface: public Resource {
 	bool get_activated() const;
 	bool get_tiled() const;
 	String get_role() const;
-	uint32_t get_width() const;
-	uint32_t get_height() const;
-	uint32_t get_min_width() const;
-	uint32_t get_min_height() const;
-	uint32_t get_max_width() const;
-	uint32_t get_max_height() const;
-	uint32_t get_x() const;
+	uint16_t get_width() const;
+	uint16_t get_height() const;
+	uint16_t get_min_width() const;
+	uint16_t get_min_height() const;
+	uint16_t get_max_width() const;
+	uint16_t get_max_height() const;
+	int16_t get_x() const;
 	void print_xwayland_surface_properties();
-	uint32_t get_y() const;
+	int16_t get_y() const;
 
 	/* WlrXWaylandSurface *get_client_pending_state() const; */
 	/* WlrXWaylandSurface *get_server_pending_state() const; */
@@ -107,6 +107,7 @@ class WlrXWaylandSurface: public Resource {
 
 	void terminate();
 	void set_size(Vector2 size);
+	void set_xy(Vector2 xy);
 	void set_activated(bool activated);
 	void set_maximized(bool maximized);
 	void set_fullscreen(bool fullscreen);
