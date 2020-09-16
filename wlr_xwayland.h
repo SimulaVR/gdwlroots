@@ -33,9 +33,9 @@ class WlrXWaylandSurface: public Resource {
 	static void handle_request_minimize(struct wl_listener *listener, void *data);
 	static void handle_request_move(struct wl_listener *listener, void *data);
 	static void handle_request_resize(struct wl_listener *listener, void *data);
+	static void handle_set_parent(struct wl_listener *listener, void *data);
 	//static void handle_request_show_window_menu( // We elminate this event/signal in xwayland
   //    struct wl_listener *listener, void *data); //"
-	static void handle_set_parent(struct wl_listener *listener, void *data);
 
 	struct wl_listener request_maximize;
 	struct wl_listener request_fullscreen;

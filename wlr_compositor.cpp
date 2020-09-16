@@ -4,11 +4,13 @@
 #include "wlr_compositor.h"
 #include "wlr_backend.h"
 #include "wlr_surface.h"
+#include <iostream>
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
 
 void WlrCompositor::handle_new_surface(
 		struct wl_listener *listener, void *data) {
+	//std::cout << "WlrCompositor::handle_new_surface(..)" << std::endl;
 	WlrCompositor *compositor = wl_container_of(
 			listener, compositor, new_surface);
 	auto surface = WlrSurface::from_wlr_surface((struct wlr_surface *)data);

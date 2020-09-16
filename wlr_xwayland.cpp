@@ -43,6 +43,7 @@ bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 }
 
 void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_request_configure(..)" << std::endl;
   struct wlr_xwayland_surface_configure_event * event = (wlr_xwayland_surface_configure_event *) data;
 
   WlrXWaylandSurface *xwayland_surface = wl_container_of(listener, xwayland_surface, request_configure);
@@ -53,6 +54,7 @@ void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, 
 
 void WlrXWayland::handle_new_xwayland_surface(
 		struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWayland::handle_new_xwayland_surface(..)" << std::endl;
   WlrXWayland *xwayland = wl_container_of(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface((struct wlr_xwayland_surface *)data);
@@ -143,7 +145,7 @@ extern "C" {
 
 void WlrXWaylandSurface::handle_destroy(
     struct wl_listener *listener, void *data) {
-  //std::cout << "WlrXWaylandSurface::handle_destroy" << std::endl;
+  //std::cout << "WlrXWaylandSurface::handle_destroy(..)" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, destroy);
 
@@ -159,35 +161,73 @@ void WlrXWaylandSurface::handle_destroy(
 }
 
 void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_map(..)" << std::endl;
 		WlrXWaylandSurface *xwayland_surface = wl_container_of(
 																													 listener, xwayland_surface, map);
 
-		bool is_parent_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+		bool is_splash_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_SPLASH);
+
+		bool is_normal_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
 																								xwayland_surface->wlr_xwayland_surface->window_type,
 																								1,
 																								NET_WM_WINDOW_TYPE_NORMAL);
 
-		if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_parent_surface) ) {
-			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
-		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_parent_surface ) {
+		if ( is_splash_surface ) {
+			//std::cout << "handle_map(..) splash surface -> map" << std::endl;
 			xwayland_surface->emit_signal("map", xwayland_surface);
-		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_parent_surface ) {
+    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_normal_surface) ) {
+			//std::cout << "handle_map(..) map_free_child" << std::endl;
+			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
+			//std::cout << "handle_map(..) map" << std::endl;
+			xwayland_surface->emit_signal("map", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
+			//std::cout << "handle_map(..) map_child" << std::endl;
 			xwayland_surface->emit_signal("map_child", xwayland_surface);
+		} else {
+			//std::cout << "handle_map(..) called without anywhere to route surface!" << std::endl;
+			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
 		}
 }
 
 void WlrXWaylandSurface::handle_unmap(
     struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_unmap(..)" << std::endl;
+
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, unmap);
   //std::cout << "WlrXWaylandSurface::handle_unmap" << std::endl;
 
-  //wl_list_remove(&xwayland_surface->surface_commit.link);
-  //wl_signal_emit(&view->events.unmap, view); //in rootston
+		bool is_splash_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_SPLASH);
 
-  //wl_list_remove(&xwayland_surface->surface_commit.link);
+		bool is_normal_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_NORMAL);
 
-  xwayland_surface->emit_signal("unmap", xwayland_surface);
+		//roughly mirrors our logic in handle_map
+		if ( is_splash_surface ) {
+			//std::cout << "handle_unmap(..) splash surface -> unmap" << std::endl;
+			xwayland_surface->emit_signal("unmap", xwayland_surface);
+    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_normal_surface) ) {
+			//std::cout << "handle_unmap(..) unmap_free_child" << std::endl;
+			xwayland_surface->emit_signal("unmap_free_child", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
+			//std::cout << "handle_unmap(..) unmap" << std::endl;
+			xwayland_surface->emit_signal("unmap", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
+			//std::cout << "handle_unmap(..) unmap_child" << std::endl;
+			xwayland_surface->emit_signal("unmap_child", xwayland_surface);
+		} else {
+			//std::cout << "handle_unmap(..) called without anywhere to route surface!" << std::endl;
+			xwayland_surface->emit_signal("unmap_free_child", xwayland_surface);
+		}
 }
 }
 
@@ -221,6 +261,7 @@ void WlrXWaylandSurface::handle_request_fullscreen(
 
 void WlrXWaylandSurface::handle_request_move(
     struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_request_move(..)" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, request_move);
   //struct wlr_xwayland_move_event *event = (struct wlr_xwayland_move_event *)data;
@@ -229,6 +270,7 @@ void WlrXWaylandSurface::handle_request_move(
 
 void WlrXWaylandSurface::handle_request_resize(
     struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_request_resize(..)" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, request_resize);
   struct wlr_xwayland_resize_event *event =
@@ -238,6 +280,7 @@ void WlrXWaylandSurface::handle_request_resize(
 
 void WlrXWaylandSurface::handle_set_parent(
     struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXWaylandSurface::handle_set_parent(..)" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, set_parent);
   xwayland_surface->emit_signal("set_parent", xwayland_surface);
@@ -270,6 +313,9 @@ WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_sur
   wl_signal_add(&wlr_xwayland_surface->events.request_move, &request_move);
   request_resize.notify = handle_request_resize;
   wl_signal_add(&wlr_xwayland_surface->events.request_resize, &request_resize);
+
+  set_parent.notify = handle_set_parent;
+  wl_signal_add(&wlr_xwayland_surface->events.set_parent, &set_parent);
 }
 
 WlrXWaylandSurface *WlrXWaylandSurface::get_parent() const {
@@ -375,6 +421,7 @@ Array WlrXWaylandSurface::get_children() {
   children.clear();
 
   wl_list_for_each(xws, &wlr_xwayland_surface->children, parent_link) {
+		//std::cout << "get_children (data, mapped): (" << (xws->data) << ", " << (xws->mapped) << ")" << std::endl;
     if (xws->data && xws->mapped) {
       WlrXWaylandSurface * xWS;
       xWS = (WlrXWaylandSurface *)xws->data; //Only return children for whom we have WlrXWaylandSurface's formed already
@@ -421,6 +468,8 @@ void WlrXWaylandSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map_free_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("map_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("unmap_free_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
+	ADD_SIGNAL(MethodInfo("unmap_child", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("surface_commit", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("request_fullscreen", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface"), PropertyInfo(Variant::BOOL, "fullscreen")));
