@@ -62,7 +62,9 @@ func _draw_surface(surface, sx, sy):
 	var texture = surface.get_texture()
 	if texture == null:
 		return
-	var state = xdg_surface.get_wlr_surface().get_current_state()
+
+	var state = xdg_surface.get_wlr_surface().alloc_current_state()
+
 	var position = Vector2(
 		(-state.get_buffer_width() / 2) + sx,
 		(-state.get_buffer_height() / 2) + sy)
@@ -81,7 +83,7 @@ func _process(delta):
 	if surface == null:
 		update()
 		return
-	var state = surface.get_current_state()
+	var state = surface.alloc_current_state()
 	geometry = xdg_surface.get_geometry()
 	var extents = collisionShape.shape.get_extents()
 	var desiredExtents = geometry.size / Vector2(2, 2)

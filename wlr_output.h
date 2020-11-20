@@ -12,8 +12,8 @@ extern "C" {
 class WlrOutput : public WaylandGlobal {
 	GDCLASS(WlrOutput, Node);
 
-	Viewport *viewport;
 	struct wlr_output *wlr_output;
+	Viewport *viewport;
 
 	void _size_changed();
 	void ensure_wl_global(WaylandDisplay *display);

@@ -191,8 +191,7 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
 
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0,
-			GL_RGBA, fmt->gl_type, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, fmt->gl_type, data);
 	gles3_flush_errors("glTexImage2D");
 
 
@@ -315,19 +314,20 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 	gles3_flush_errors("glPixelStorei");
 
 	const struct gles3_pixel_format *fmt = gles3_texture->pixel_format;
-	if (fmt->swizzle) {
+	if (fmt->swizzle && fmt->has_alpha) {
 		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
 		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-	}
+	} else if (fmt->swizzle && !fmt->has_alpha) {
+		GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ONE}; //force the alpha values to 1 (or else they'll be garbage & cause weird transparency effects)
+		glTexParameteriv(texture->target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+  }
+
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, src_x);
 	glPixelStorei(GL_UNPACK_SKIP_ROWS, src_y);
 
-	glTexSubImage2D(GL_TEXTURE_2D, 0, dst_x, dst_y, width, height,
-		fmt->gl_format, fmt->gl_type, data);
-
-
+	glTexSubImage2D(GL_TEXTURE_2D, 0, dst_x, dst_y, width, height, fmt->gl_format, fmt->gl_type, data);
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);

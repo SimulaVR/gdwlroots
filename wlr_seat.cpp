@@ -44,9 +44,15 @@ WlrSeat::~WlrSeat() {
 
 void WlrSeat::pointer_notify_enter(Ref<WlrSurface> surface, double sx, double sy) {
   if (surface.is_valid()) {
+	//std:cout << "wlr_pointer_notify_enter=> surface: " << (surface->get_wlr_surface()) << "sx: " << sx << "sy: " << sy << std::endl;
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
   }
+}
+
+WlrSurface *WlrSeat::get_pointer_focused_surface() {
+  struct wlr_surface * focused_surface = wlr_seat->pointer_state.focused_surface;
+	return WlrSurface::from_wlr_surface(focused_surface);
 }
 
 void WlrSeat::pointer_clear_focus() {
@@ -55,6 +61,7 @@ void WlrSeat::pointer_clear_focus() {
 }
 
 void WlrSeat::pointer_notify_motion(double sx, double sy) {
+  //std:cout << "wlr_pointer_notify_motion=> surface: " << "sx: " << sx << "sy: " << sy << std::endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	wlr_seat_pointer_notify_motion(wlr_seat, timespec_to_msec(&now), sx, sy);
@@ -251,6 +258,9 @@ void WlrSeat::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("validate_grab_serial", "serial"),
 			&WlrSeat::validate_grab_serial);
+
+	ClassDB::bind_method(D_METHOD("get_pointer_focused_surface"),
+	 									 &WlrSeat::get_pointer_focused_surface);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "capabilities", PROPERTY_HINT_FLAGS,
 				"Pointer, Keyboard, Touch"),

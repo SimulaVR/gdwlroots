@@ -54,6 +54,7 @@ public:
 	void keyboard_notify_modifiers();
 
 	bool validate_grab_serial(uint32_t serial);
+	WlrSurface * get_pointer_focused_surface();
 
   struct wlr_seat * get_wlr_seat() const;
 

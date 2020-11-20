@@ -25,6 +25,11 @@ protected:
 	WlrXdgPopup(struct wlr_xdg_popup *xdg_popup);
 
 public:
+	int get_x();
+	int get_y();
+	int get_width();
+	int get_height();
+	Rect2 get_geometry();
 	static WlrXdgPopup *from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup);
 };
 
@@ -113,6 +118,8 @@ public:
 	void set_resizing(bool resizing);
 	void set_tiled(bool tiled);
 	void send_close();
+
+	void remove_listeners();
 };
 
 class WlrXdgSurface : public Resource {
@@ -126,12 +133,22 @@ class WlrXdgSurface : public Resource {
 	struct wlr_xdg_surface *wlr_xdg_surface;
 
 	struct wl_listener destroy;
+	struct wl_listener ping_timeout;
+	struct wl_listener new_popup;
 	struct wl_listener map;
 	struct wl_listener unmap;
+	// struct wl_listener configure;
+	// struct wl_listener ack_configure;
 
+	static void handle_ping_timeout(struct wl_listener *listener, void *data);
 	static void handle_destroy(struct wl_listener *listener, void *data);
+	static void handle_new_popup(struct wl_listener *listener, void *data);
 	static void handle_map(struct wl_listener *listener, void *data);
 	static void handle_unmap(struct wl_listener *listener, void *data);
+	// static void handle_configure(struct wl_listener *listener, void *data);
+	// static void handle_ack_configure(struct wl_listener *listener, void *data);
+
+	Array children;
 
 protected:
 	static void _bind_methods();
@@ -159,6 +176,8 @@ public:
 
 	static WlrXdgSurface *from_wlr_xdg_surface(
 			struct wlr_xdg_surface *xdg_surface);
+
+	Array get_children();
 };
 
 VARIANT_ENUM_CAST(WlrXdgSurface::XdgSurfaceRole);
@@ -171,10 +190,11 @@ class WlrXdgShell : public WaylandGlobal {
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
 
-	struct wl_listener new_xdg_surface;
+	struct wl_listener new_surface;
+	struct wl_listener destroy;
 
-	static void handle_new_xdg_surface(
-			struct wl_listener *listener, void *data);
+	static void handle_new_surface(struct wl_listener *listener, void *data);
+	static void handle_destroy(struct wl_listener *listener, void *data);
 
 protected:
 	static void _bind_methods();

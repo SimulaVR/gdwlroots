@@ -10,22 +10,27 @@ extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
 
-void WlrXdgShell::handle_new_xdg_surface(
+void WlrXdgShell::handle_new_surface(
 		struct wl_listener *listener, void *data) {
 	WlrXdgShell *xdg_shell = wl_container_of(
-			listener, xdg_shell, new_xdg_surface);
+			listener, xdg_shell, new_surface);
 	auto surface = WlrXdgSurface::from_wlr_xdg_surface(
 			(struct wlr_xdg_surface *)data);
+	//std::cout << "WlrXdgShell::handle_new_surface called w/surface: " << surface << std::endl;
 	xdg_shell->emit_signal("new_surface", surface);
-  std::cout << "WlrXdgSurface::new_surface(..) called w/surface: " << surface << std::endl;
+}
+
+void WlrXdgShell::handle_destroy(struct wl_listener *listener, void *data) {
+	//struct wlr_xdg_shell * xdg_shell = (struct wlr_xdg_shell *)data;
+	WlrXdgShell *xdg_shell = wl_container_of(listener, xdg_shell, destroy);
+	xdg_shell->emit_signal("destroy", xdg_shell);
 }
 
 }
 
 void WlrXdgShell::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("new_surface",
-				PropertyInfo(Variant::OBJECT,
-					"surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("new_surface", PropertyInfo(Variant::OBJECT, "surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xdg_shell", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgShell")));
 }
 
 void WlrXdgShell::ensure_wl_global(WaylandDisplay *display) {
@@ -33,9 +38,11 @@ void WlrXdgShell::ensure_wl_global(WaylandDisplay *display) {
 		return;
 	}
 	wlr_xdg_shell = wlr_xdg_shell_create(display->get_wayland_display());
-	new_xdg_surface.notify = handle_new_xdg_surface;
-	wl_signal_add(&wlr_xdg_shell->events.new_surface,
-			&new_xdg_surface);
+
+	new_surface.notify = handle_new_surface;
+	wl_signal_add(&wlr_xdg_shell->events.new_surface, &new_surface);
+	destroy.notify = handle_destroy;
+	wl_signal_add(&wlr_xdg_shell->events.destroy, &destroy);
 }
 
 void WlrXdgShell::destroy_wl_global(WaylandDisplay *display) {
@@ -77,6 +84,25 @@ WlrXdgPopup *WlrXdgSurface::get_xdg_popup() const {
 Rect2 WlrXdgSurface::get_geometry() {
 	return Rect2(wlr_xdg_surface->geometry.x, wlr_xdg_surface->geometry.y,
 			wlr_xdg_surface->geometry.width, wlr_xdg_surface->geometry.height);
+}
+
+// Possibly needed: wlr_xdg_surface_for_each_popup, wlr_xdg_surface_for_each_surface
+Array WlrXdgSurface::get_children() {
+  struct wlr_xdg_popup * xdgp;
+
+  children.clear();
+
+  wl_list_for_each(xdgp, &wlr_xdg_surface->popups, link) {
+		//std::cout << "get_children (data, mapped): (" << (xdgp->base->data) << ", " << (xdgp->base->mapped) << ")" << std::endl;
+		if (xdgp->base->data && xdgp->base->mapped) {
+			WlrXdgSurface * xDGS;
+			xDGS = (WlrXdgSurface *)xdgp->base->data;    //Only return children for whome we have WlrXdgSurface formed already
+			Variant _xDGS = Variant( (Object *) xDGS );
+			children.push_front(_xDGS);
+		}
+  }
+
+  return children;
 }
 
 WlrSurface *WlrXdgSurface::get_wlr_surface() const {
@@ -127,8 +153,8 @@ void WlrXdgSurface::for_each_surface_ffi(void * func) {
 
 WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
 	double sub_x, sub_y;
-	struct wlr_surface *result = wlr_xdg_surface_surface_at(
-			wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
+	struct wlr_surface *result = wlr_xdg_surface_surface_at(wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
+	//struct wlr_surface *result = wlr_surface_surface_at(wlr_xdg_surface->surface, sx, sy, &sub_x, &sub_y);
 	return new WlrSurfaceAtResult(
 			WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
@@ -141,6 +167,8 @@ void WlrXdgSurface::_bind_methods() {
 			&WlrXdgSurface::get_xdg_popup);
 	ClassDB::bind_method(D_METHOD("get_geometry"),
 			&WlrXdgSurface::get_geometry);
+	ClassDB::bind_method(D_METHOD("get_children"),
+											 &WlrXdgSurface::get_children);
 	ClassDB::bind_method(D_METHOD("get_wlr_surface"),
 			&WlrXdgSurface::get_wlr_surface);
 	ClassDB::bind_method(D_METHOD("for_each_surface", "func"),
@@ -156,18 +184,42 @@ void WlrXdgSurface::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
 			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT,
-			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT,
-			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("ping_timeout", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("new_popup", PropertyInfo(Variant::OBJECT, "xdg_popup", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgPopup")));
+	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
+	ADD_SIGNAL(MethodInfo("configure",
+												PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface"),
+												PropertyInfo(Variant::OBJECT, "xdg_toplevel_state", PROPERTY_HINT_RESOURCE_TYPE, "WlrToplevelState"),
+												PropertyInfo(Variant::INT, "serial")
+												));
+	ADD_SIGNAL(MethodInfo("ack_configure",
+												PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface"),
+												PropertyInfo(Variant::OBJECT, "xdg_toplevel_state", PROPERTY_HINT_RESOURCE_TYPE, "WlrToplevelState"),
+												PropertyInfo(Variant::INT, "serial")
+												));
+
 }
 
 extern "C" {
 
 void WlrXdgSurface::handle_destroy(
 		struct wl_listener *listener, void *data) {
-	WlrXdgSurface *xdg_surface = wl_container_of(
-			listener, xdg_surface, destroy);
+	//std::cout << "WlrXdgSurface::handle_destroy called w/XdgSurface: " << xdg_surface << std::endl;
+	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, destroy);
+
+  wl_list_remove(&xdg_surface->destroy.link);
+  wl_list_remove(&xdg_surface->ping_timeout.link);
+  wl_list_remove(&xdg_surface->new_popup.link);
+  wl_list_remove(&xdg_surface->map.link);
+  wl_list_remove(&xdg_surface->unmap.link);
+  //wl_list_remove(&xdg_surface->configure.link);
+  //wl_list_remove(&xdg_surface->ack_configure.link);
+
+	if(xdg_surface->get_role() == XDG_SURFACE_ROLE_TOPLEVEL) {
+		xdg_surface->toplevel->remove_listeners();
+	}
+
 	xdg_surface->emit_signal("destroy", xdg_surface);
 }
 
@@ -175,14 +227,39 @@ void WlrXdgSurface::handle_map(
 		struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(
 			listener, xdg_surface, map);
+  //std::cout << "WlrXdgSurface::handle_map(..) called w/xdg_surface: " << xdg_surface << std::endl;
 	xdg_surface->emit_signal("map", xdg_surface);
-  std::cout << "WlrXdgSurface::handle_map(..) called w/xdg_surface: " << xdg_surface << std::endl;
+}
+
+void WlrXdgSurface::handle_ping_timeout(struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXdgSurface::handle_ping_timeout(..) " << std::endl;
+	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, ping_timeout);
+	xdg_surface->emit_signal("ping_timeout", xdg_surface);
+}
+
+// Don't include the configure handlers for now
+// void WlrXdgSurface::handle_configure(struct wl_listener *listener, void *data) {
+// 	std::cout << "WlrXdgSurface::handle_configure(..) " << std::endl;
+// 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, ping_timeout);
+// 	xdg_surface->emit_signal("configure", xdg_surface, serial, wlrToplevelState);
+// }
+
+// void WlrXdgSurface::handle_ack_configure(struct wl_listener *listener, void *data) {
+// 	std::cout << "WlrXdgSurface::handle_configure(..) " << std::endl;
+// 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, ping_timeout);
+// 	xdg_surface->emit_signal("configure", xdg_surface, serial, wlrToplevelState);
+// }
+
+void WlrXdgSurface::handle_new_popup(struct wl_listener *listener, void *data) {
+	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, new_popup);
+	// std::cout << "WlrXdgSurface::handle_new_popup called w/xdg_surface: " << xdg_surface << " and popup: " << xdg_surface->popup << std::endl;
+	xdg_surface->emit_signal("new_popup", xdg_surface->popup);
 }
 
 void WlrXdgSurface::handle_unmap(
 		struct wl_listener *listener, void *data) {
-	WlrXdgSurface *xdg_surface = wl_container_of(
-			listener, xdg_surface, unmap);
+	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, unmap);
+  //std::cout << "WlrXdgSurface::handle_unmap(..) called w/xdg_surface: " << xdg_surface << std::endl;
 	xdg_surface->emit_signal("unmap", xdg_surface);
 }
 
@@ -197,10 +274,19 @@ WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	xdg_surface->data = this;
 	destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
+	new_popup.notify = handle_new_popup;
+	wl_signal_add(&xdg_surface->events.new_popup, &new_popup);
 	map.notify = handle_map;
 	wl_signal_add(&xdg_surface->events.map, &map);
 	unmap.notify = handle_unmap;
 	wl_signal_add(&xdg_surface->events.unmap, &unmap);
+	ping_timeout.notify = handle_unmap;
+	wl_signal_add(&xdg_surface->events.ping_timeout, &ping_timeout);
+	// configure.notify = handle_unmap;
+	// wl_signal_add(&xdg_surface->events.configure, &configure);
+	// ack_configure.notify = handle_unmap;
+	// wl_signal_add(&xdg_surface->events.ack_configure, &ack_configure);
+
 	switch (xdg_surface->role) {
 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
 		toplevel = WlrXdgToplevel::from_wlr_xdg_toplevel(
@@ -224,6 +310,20 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 }
 
 extern "C" {
+
+
+void WlrXdgToplevel::remove_listeners() {
+	wl_list_remove(&request_maximize.link);
+	wl_list_remove(&request_fullscreen.link);
+	wl_list_remove(&request_minimize.link);
+	wl_list_remove(&request_move.link);
+	wl_list_remove(&request_resize.link);
+	wl_list_remove(&request_show_window_menu.link);
+	wl_list_remove(&set_parent.link);
+	wl_list_remove(&set_title.link);
+	wl_list_remove(&set_app_id.link);
+}
+
 
 void WlrXdgToplevel::handle_request_maximize(
 		struct wl_listener *listener, void *data) {
@@ -275,14 +375,15 @@ void WlrXdgToplevel::handle_request_show_window_menu(
 			listener, xdg_toplevel, request_show_window_menu);
 	struct wlr_xdg_toplevel_show_window_menu_event *event =
 		(struct wlr_xdg_toplevel_show_window_menu_event *)data;
+	//std::cout << "WlrXdgTopLevel::handle_request_show_window_menu" << std::endl;
 	xdg_toplevel->emit_signal("request_show_window_menu", xdg_toplevel,
 			event->serial, event->x, event->y);
 }
 
 void WlrXdgToplevel::handle_set_parent(
 		struct wl_listener *listener, void *data) {
-	WlrXdgToplevel *xdg_toplevel = wl_container_of(
-			listener, xdg_toplevel, set_parent);
+	//std::cout << "WlrXdgTopLevel::handle_set_parent" << std::endl;
+	WlrXdgToplevel *xdg_toplevel = wl_container_of(listener, xdg_toplevel, set_parent);
 	xdg_toplevel->emit_signal("set_parent", xdg_toplevel);
 }
 
@@ -353,8 +454,10 @@ String WlrXdgToplevel::get_title() const {
 	return String(wlr_xdg_toplevel->title);
 }
 
+extern "C" {
 void WlrXdgToplevel::set_size(Vector2 size) {
 	wlr_xdg_toplevel_set_size(wlr_xdg_toplevel->base, size.width, size.height);
+}
 }
 
 void WlrXdgToplevel::set_activated(bool activated) {
@@ -374,7 +477,7 @@ void WlrXdgToplevel::set_resizing(bool resizing) {
 }
 
 void WlrXdgToplevel::set_tiled(bool tiled) {
-	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled);
+	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled );
 }
 
 void WlrXdgToplevel::send_close() {
@@ -514,7 +617,29 @@ WlrXdgPopup::WlrXdgPopup() {
 
 WlrXdgPopup::WlrXdgPopup(struct wlr_xdg_popup *xdg_popup) {
 	wlr_xdg_popup = xdg_popup;
+	//wlr_xdg_popup->data = this; //doesn't exist
 	// TOOD: Bind listeners
+}
+
+Rect2 WlrXdgPopup::get_geometry() {
+	return Rect2(wlr_xdg_popup->geometry.x, wlr_xdg_popup->geometry.y,
+							 wlr_xdg_popup->geometry.width, wlr_xdg_popup->geometry.height);
+}
+
+int WlrXdgPopup::get_x() {
+	return wlr_xdg_popup->geometry.x;
+}
+
+int WlrXdgPopup::get_y() {
+	return wlr_xdg_popup->geometry.y;
+}
+
+int WlrXdgPopup::get_width() {
+	return wlr_xdg_popup->geometry.width;
+}
+
+int WlrXdgPopup::get_height() {
+	return wlr_xdg_popup->geometry.height;
 }
 
 WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
@@ -526,5 +651,16 @@ WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
 }
 
 void WlrXdgPopup::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_x"),
+											 &WlrXdgPopup::get_x);
+	ClassDB::bind_method(D_METHOD("get_y"),
+											 &WlrXdgPopup::get_y);
+	ClassDB::bind_method(D_METHOD("get_height"),
+											 &WlrXdgPopup::get_height);
+	ClassDB::bind_method(D_METHOD("get_width"),
+											 &WlrXdgPopup::get_width);
+
+	ClassDB::bind_method(D_METHOD("get_geometry"),
+					&WlrXdgSurface::get_geometry);
 	// TODO: bind classdb
 }

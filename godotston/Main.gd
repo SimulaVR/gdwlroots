@@ -10,6 +10,7 @@ func _on_WaylandDisplay_ready():
 func handle_map_surface(surface):
 	var vp = get_viewport().size
 	surface.position = Vector2(vp.x / 2, -surface.get_size().y)
+	print("surface.position: " , surface.position)
 	surface.focus()
 	add_child(surface)
 

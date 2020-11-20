@@ -10,7 +10,7 @@ extern "C" {
 
 void WlrCompositor::handle_new_surface(
 		struct wl_listener *listener, void *data) {
-	//std::cout << "WlrCompositor::handle_new_surface(..)" << std::endl;
+	//std::cout << "WlrCompositor::handle_new_surface(..): " << (struct wlr_surface *)data << std::endl;
 	WlrCompositor *compositor = wl_container_of(
 			listener, compositor, new_surface);
 	auto surface = WlrSurface::from_wlr_surface((struct wlr_surface *)data);
