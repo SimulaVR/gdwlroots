@@ -43,9 +43,10 @@ srcs = [
     "wlr_surface.cpp",
     "wlr_xdg_shell.cpp",
     "wlr_xwayland.cpp",
+    "debug.cpp",
 ]
 
-module_env = env.Clone(tools=['wayland-scanner'], toolpath=['tools'])
+module_env = env.Clone(tools=['wayland_scanner'], toolpath=['tools/wayland-scanner'])
 
 module_env.WaylandScanner("server-header",
     "xdg-shell-protocol.h", "xdg-shell.xml")
