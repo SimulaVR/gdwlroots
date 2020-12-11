@@ -253,7 +253,7 @@ void WlrXdgSurface::handle_ping_timeout(struct wl_listener *listener, void *data
 void WlrXdgSurface::handle_new_popup(struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, new_popup);
 	// std::cout << "WlrXdgSurface::handle_new_popup called w/xdg_surface: " << xdg_surface << " and popup: " << xdg_surface->popup << std::endl;
-	xdg_surface->emit_signal("new_popup", xdg_surface->popup);
+	xdg_surface->emit_signal("new_popup", xdg_surface);
 }
 
 void WlrXdgSurface::handle_unmap(

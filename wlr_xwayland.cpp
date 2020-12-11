@@ -140,7 +140,6 @@ WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
 }
 
 
-
 extern "C" {
 
 void WlrXWaylandSurface::handle_destroy(
