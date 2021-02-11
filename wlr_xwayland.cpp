@@ -132,9 +132,34 @@ WlrSurface *WlrXWaylandSurface::get_wlr_surface() const {
   return WlrSurface::from_wlr_surface(wlr_xwayland_surface->surface);
 }
 
+struct wlr_surface *wlr_surface_surface_at_spillover(struct wlr_surface *surface, double sx, double sy, double *sub_x, double *sub_y) {
+	struct wlr_subsurface *subsurface;
+	wl_list_for_each_reverse(subsurface, &surface->subsurfaces, parent_link) {
+		double _sub_x = subsurface->current.x;
+		double _sub_y = subsurface->current.y;
+		struct wlr_surface *sub = wlr_surface_surface_at_spillover(subsurface->surface,
+				sx - _sub_x, sy - _sub_y, sub_x, sub_y);
+		if (sub != NULL) {
+			return sub;
+		}
+	}
+
+	/* Remove this to fix XWayland spillover popup functionality
+	if (wlr_surface_point_accepts_input(surface, sx, sy)) {
+		,*sub_x = sx;
+		,*sub_y = sy;
+		return surface;
+	}
+  */
+
+	*sub_x = sx;
+	*sub_y = sy;
+	return surface;
+}
+
 WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
   double sub_x, sub_y;
-  struct wlr_surface *result = wlr_surface_surface_at(wlr_xwayland_surface->surface, sx, sy, &sub_x, &sub_y);
+  struct wlr_surface *result = wlr_surface_surface_at_spillover(wlr_xwayland_surface->surface, sx, sy, &sub_x, &sub_y);
 
   return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
