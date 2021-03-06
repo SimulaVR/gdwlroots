@@ -666,6 +666,6 @@ void WlrXdgPopup::_bind_methods() {
 											 &WlrXdgPopup::get_width);
 
 	ClassDB::bind_method(D_METHOD("get_geometry"),
-					&WlrXdgSurface::get_geometry);
+					&WlrXdgPopup::get_geometry);
 	// TODO: bind classdb
 }
