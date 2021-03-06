@@ -3,6 +3,7 @@
 #include "wlr_surface.h"
 #include "wlr_output.h"
 #include <iostream>
+namespace wlr {
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_surface.h>
@@ -13,6 +14,8 @@ extern "C" {
 //We override xwayland.h to avoid the `class` keyword
 #include "xwayland.h" //as opposed to: <wlr/xwayland.h>
 }
+}
+using namespace wlr;
 
 WlrSurface *WlrSurfaceAtResult::get_surface() {
 	return surface;

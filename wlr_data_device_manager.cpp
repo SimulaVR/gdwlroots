@@ -1,10 +1,15 @@
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wlr_data_device_manager.h"
+
+namespace wlr {
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_data_device.h>
 }
+}
+
+using namespace wlr;
 
 void WlrDataDeviceManager::ensure_wl_global(WaylandDisplay *display) {
 	if (wlr_data_device_manager) {

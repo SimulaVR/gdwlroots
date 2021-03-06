@@ -5,14 +5,17 @@
 #include "wayland_display.h"
 #include "wayland_global.h"
 #include "wlr_backend.h"
+
+namespace wlr {
 extern "C" {
 #include <wlr/types/wlr_output.h>
+}
 }
 
 class WlrOutput : public WaylandGlobal {
 	GDCLASS(WlrOutput, Node);
 
-	struct wlr_output *wlr_output;
+	struct wlr::wlr_output *wlr_output;
 	Viewport *viewport;
 
 	void _size_changed();
@@ -27,7 +30,7 @@ protected:
 public:
 	WlrOutput();
 	~WlrOutput();
-  struct wlr_output *get_wlr_output() const;
+  struct wlr::wlr_output *get_wlr_output() const;
 };
 
 #endif

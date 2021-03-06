@@ -28,7 +28,7 @@ env.ParseConfig('pkg-config libglvnd --cflags')
 # env.ParseConfig('pkg-config EGL --cflags')
 
 srcs = [
-    "gles3_renderer.cpp",
+    "rd_renderer.cpp",
     "keycode_map.cpp",
     "register_types.cpp",
     "renderer.cpp",

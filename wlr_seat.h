@@ -1,23 +1,26 @@
 #ifndef GDWLR_WLR_SEAT_H
 #define GDWLR_WLR_SEAT_H
 #include <stdint.h>
-#include "core/os/input_event.h"
+#include "core/input/input_event.h"
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wayland_global.h"
 #include "wlr_keyboard.h"
 #include "wlr_surface.h"
+
+namespace wlr {
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_seat.h>
+}
 }
 
 class WlrSeat : public WaylandGlobal {
 	GDCLASS(WlrSeat, Node);
 
 	uint32_t capabilities = 0;
-	struct wlr_seat *wlr_seat;
+	struct wlr::wlr_seat *wlr_seat;
 
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
@@ -56,7 +59,7 @@ public:
 	bool validate_grab_serial(uint32_t serial);
 	WlrSurface * get_pointer_focused_surface();
 
-  struct wlr_seat * get_wlr_seat() const;
+  struct wlr::wlr_seat * get_wlr_seat() const;
 
 	WlrSeat();
 	~WlrSeat();

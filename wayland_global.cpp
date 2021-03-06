@@ -1,6 +1,8 @@
 #include "wayland_global.h"
 #include "wayland_display.h"
 
+using namespace wlr;
+
 WaylandDisplay *WaylandGlobal::get_wayland_display() {
 	Node *parent = get_parent();
 	WaylandDisplay *display = dynamic_cast<WaylandDisplay *>(parent);

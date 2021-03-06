@@ -1,15 +1,15 @@
-#include "drivers/gles3/rasterizer_gles3.h"
-#include "gles3_renderer.h"
-#include "servers/visual/visual_server_globals.h"
+#include "rd_renderer.h"
 #include "wayland_display.h"
 #include "wlr_backend.h"
 #include <assert.h>
 #include <stdlib.h>
+namespace wlr {
 extern "C" {
 #include <wlr/backend.h>
 #include <wlr/backend/interface.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/util/log.h>
+
 
 bool backend_start(struct wlr_backend *backend) {
 	/* This space deliberately left blank */
@@ -32,6 +32,9 @@ static const struct wlr_backend_impl backend_impl = {
 };
 
 }
+}
+
+using namespace wlr;
 
 void WlrBackend::_bind_methods() {
 	/* This space deliberately left blank */
@@ -71,14 +74,8 @@ void WlrBackend::_notification(int p_what) {
 
 WlrBackend::WlrBackend() {
 	wlr_log_init(WLR_ERROR, NULL);
-	auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer);
-	if (auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer)) {
-		renderer = new WlrGLES3Renderer(gles3_rasterizer);
-       	} else {
-		print_line("Unsupported rasterizer backend");
-		assert(0);
-	}
-	wlr_backend_init(&backend, &backend_impl);
+	renderer = new WlrRDRenderer();
+	wlr_backend_init(&backend, &wlr::backend_impl);
 }
 
 WlrBackend::~WlrBackend() {

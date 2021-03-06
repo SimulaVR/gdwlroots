@@ -1,14 +1,19 @@
 #include <assert.h>
-#include "core/func_ref.h"
-#include "core/object.h"
+#include "core/object/object.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wlr_surface.h"
 #include "wlr_xdg_shell.h"
 #include <iostream>
+
+namespace wlr {
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
+}
+}
+
+using namespace wlr;
 
 void WlrXdgShell::handle_new_surface(
 		struct wl_listener *listener, void *data) {
@@ -26,7 +31,6 @@ void WlrXdgShell::handle_destroy(struct wl_listener *listener, void *data) {
 	xdg_shell->emit_signal("destroy", xdg_shell);
 }
 
-}
 
 void WlrXdgShell::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("new_surface", PropertyInfo(Variant::OBJECT, "surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
@@ -113,13 +117,14 @@ extern "C" {
 
 static void for_each_surface_iter(struct wlr_surface *surface,
 		int sx, int sy, void *data) {
-	FuncRef *func = (FuncRef *)data;
+	Callable* func = (Callable*) data;
 	Variant vSurface(WlrSurface::from_wlr_surface(surface))
 		, vSx(sx), vSy(sy);
 	const Variant *args[] = { &vSurface, &vSx, &vSy };
-	Variant::CallError error;
-	func->call_func(&args[0], sizeof(args)/sizeof(args[0]), error);
-	if (error.error != Variant::CallError::Error::CALL_OK) {
+	Callable::CallError error;
+	Variant ret;
+	func->call(&args[0], sizeof(args)/sizeof(args[0]), ret, error);
+	if (error.error != Callable::CallError::Error::CALL_OK) {
 		printf("call error %d\n", error.error);
 	}
 }
@@ -136,9 +141,9 @@ static void for_each_surface_iter_ffi(struct wlr_surface *surface,
 
 }
 
-void WlrXdgSurface::for_each_surface(Ref<FuncRef> fn) {
+void WlrXdgSurface::for_each_surface(Callable fn) {
 	wlr_xdg_surface_for_each_surface(
-			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
+			wlr_xdg_surface, for_each_surface_iter, &fn);
 }
 
 //void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {

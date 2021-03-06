@@ -1,11 +1,12 @@
 #include <assert.h>
-#include "core/os/input_event.h"
+#include "core/input/input_event.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wlr_seat.h"
 #include "wlr_surface.h"
 #include <iostream>
-using namespace std;
+
+namespace wlr {
 extern "C" {
 #include <xkbcommon/xkbcommon.h>
 #include <linux/input-event-codes.h>
@@ -18,6 +19,8 @@ static inline int64_t timespec_to_msec(const struct timespec *a) {
 	return (int64_t)a->tv_sec * 1000 + a->tv_nsec / 1000000;
 }
 }
+}
+using namespace wlr;
 
 void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 	if (wlr_seat) {
@@ -279,9 +282,9 @@ void WlrSeat::_notification(int p_what) {
 	case NOTIFICATION_EXIT_TREE:
 		destroy_wl_global(get_wayland_display());
 		break;
-  case MainLoop::NOTIFICATION_WM_FOCUS_IN:
+  case MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN:
     break;
-  case MainLoop::NOTIFICATION_WM_FOCUS_OUT:
+  case MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT:
     {
     //TODO: Send an Alt KeyPress + KeyRelease event in order to prevent Alt-Tabbing causing Alt to stay stuck down
     // struct timespec now;

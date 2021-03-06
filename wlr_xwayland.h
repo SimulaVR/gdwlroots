@@ -1,6 +1,5 @@
 #ifndef GDWLR_WLR_XWAYLAND_SURFACE_H
 #define GDWLR_WLR_XWAYLAND_SURFACE_H
-#include "core/func_ref.h"
 #include "renderer.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
@@ -9,69 +8,67 @@
 #include "wlr_compositor.h"
 #include "wlr_output.h"
 #include "wlr_seat.h"
-//#include "xwayland/xwm.h" We are unable to access this :(
-extern "C" {
-/* #include <wlr/types/wlr_output_damage.h> */
-/* #include <wlr/xcursor.h> */
-/* #include <wlr/types/wlr_xcursor_manager.h> */
-#include <wayland-server.h>
 
-//We override xwayland.h to avoid the `class` keyword
-//#include <wlr/xwayland.h>
+namespace wlr {
+extern "C" {
+#define static
+#include <wlr/render/wlr_renderer.h>
+#undef static
+#include <wayland-server.h>
 #include "xwayland.h"
-/* #include "xwayland/xwm.h" */
+}
 }
 
 class WlrXWaylandSurface: public Resource {
  private:
   GDCLASS(WlrXWaylandSurface, Resource);
-  struct wlr_xwayland_surface *wlr_xwayland_surface;
+  struct wlr::wlr_xwayland_surface *wlr_xwayland_surface;
 
 	static void handle_request_maximize(
-			struct wl_listener *listener, void *data);
-	static void handle_request_fullscreen(struct wl_listener *listener, void *data);
-	static void handle_request_minimize(struct wl_listener *listener, void *data);
-	static void handle_request_move(struct wl_listener *listener, void *data);
-	static void handle_request_resize(struct wl_listener *listener, void *data);
-	static void handle_set_parent(struct wl_listener *listener, void *data);
+			struct wlr::wl_listener *listener, void *data);
+	static void handle_request_fullscreen(struct wlr::wl_listener *listener, void *data);
+	static void handle_request_minimize(struct wlr::wl_listener *listener, void *data);
+	static void handle_request_move(struct wlr::wl_listener *listener, void *data);
+	static void handle_request_resize(struct wlr::wl_listener *listener, void *data);
+	static void handle_set_parent(struct wlr::wl_listener *listener, void *data);
 	//static void handle_request_show_window_menu( // We elminate this event/signal in xwayland
-  //    struct wl_listener *listener, void *data); //"
+  //    struct wlr::wl_listener *listener, void *data); //"
 
-	struct wl_listener request_maximize;
-	struct wl_listener request_fullscreen;
-	struct wl_listener request_minimize;
-	struct wl_listener request_move;
-	struct wl_listener request_resize;
-	struct wl_listener request_show_window_menu;
-	struct wl_listener set_parent;
-	struct wl_listener surface_commit;
+	struct wlr::wl_listener request_maximize;
+	struct wlr::wl_listener request_fullscreen;
+	struct wlr::wl_listener request_minimize;
+	struct wlr::wl_listener request_move;
+	struct wlr::wl_listener request_resize;
+	struct wlr::wl_listener request_show_window_menu;
+	struct wlr::wl_listener set_parent;
+	struct wlr::wl_listener surface_commit;
 
-	struct wl_listener destroy;
-	struct wl_listener map;
-	struct wl_listener unmap;
+	struct wlr::wl_listener destroy;
+	struct wlr::wl_listener map;
+	struct wlr::wl_listener unmap;
 
-	struct wl_listener request_configure;
-	struct wl_listener set_title;
-	struct wl_listener set_class;
+	struct wlr::wl_listener request_configure;
+	struct wlr::wl_listener set_title;
+	struct wlr::wl_listener set_class;
 
-	/* static void handle_set_title(struct wl_listener *listener, void *data); */
-	/* static void handle_set_class(struct wl_listener *listener, void *data); */
-	static void handle_request_configure(struct wl_listener *listener, void *data);
-	/* static void handle_surface_commit(struct wl_listener *listener, void *data); */
-	static void handle_destroy(struct wl_listener *listener, void *data);
-	static void handle_map(struct wl_listener *listener, void *data);
-	static void handle_unmap(struct wl_listener *listener, void *data);
+	/* static void handle_set_title(struct wlr::wl_listener *listener, void *data); */
+	/* static void handle_set_class(struct wlr::wl_listener *listener, void *data); */
+	static void handle_request_configure(struct wlr::wl_listener *listener, void *data);
+	/* static void handle_surface_commit(struct wlr::wl_listener *listener, void *data); */
+	static void handle_destroy(struct wlr::wl_listener *listener, void *data);
+	static void handle_map(struct wlr::wl_listener *listener, void *data);
+	static void handle_unmap(struct wlr::wl_listener *listener, void *data);
 
   Array children;
 
  protected:
 	static void _bind_methods();
 	WlrXWaylandSurface(); /* Necessary for Object */
-	WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_surface);
+	WlrXWaylandSurface(struct wlr::wlr_xwayland_surface *xwayland_surface);
  public:
-	/* struct wl_listener handle_set_title; */
-	/* struct wl_listener handle_set_class; */
-	static WlrXWaylandSurface *from_wlr_xwayland_surface(struct wlr_xwayland_surface *xwayland_surface);
+	/* struct wlr::wl_listener handle_set_title; */
+	/* struct wlr::wl_listener handle_set_class; */
+	static WlrXWaylandSurface *from_wlr_xwayland_surface(struct wlr::wlr_xwayland_surface *xwayland_surface);
   Array get_children();
 
 	/* enum TilingEdges { */
@@ -118,7 +115,7 @@ class WlrXWaylandSurface: public Resource {
 
 	WlrSurface *get_wlr_surface() const;
 	Rect2 get_geometry();
-	void for_each_surface(Ref<FuncRef> func);
+	void for_each_surface(Callable func);
 	/* void schedule_frame(Variant _output); */
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
 };
@@ -127,16 +124,16 @@ class WlrXWayland: public WaylandGlobal {
  private:
 	GDCLASS(WlrXWayland, Node);
 
-	struct wlr_xwayland *wlr_xwayland;
+	struct wlr::wlr_xwayland *wlr_xwayland;
   /* WaylandDisplay *waylandDisplay = NULL; */ //we already have this via WaylandGlobal
 
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
 
-	struct wl_listener new_xwayland_surface;
+	struct wlr::wl_listener new_xwayland_surface;
 
 	static void handle_new_xwayland_surface(
-                struct wl_listener *listener, void *data);
+                struct wlr::wl_listener *listener, void *data);
  protected:
 	static void _bind_methods();
  public:

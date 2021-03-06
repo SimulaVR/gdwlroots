@@ -1,10 +1,12 @@
-#include "core/object.h"
+#include "core/object/object.h"
+#include "scene/main/window.h"
 #include "scene/main/viewport.h"
 #include "wayland_display.h"
 #include "wlr_backend.h"
 #include "wlr_output.h"
 #include <stdlib.h>
 #include <iostream>
+namespace wlr {
 extern "C" {
 #include <wlr/interfaces/wlr_output.h>
 
@@ -34,6 +36,9 @@ static const struct wlr_output_impl output_impl = {
 };
 
 }
+}
+
+using namespace wlr;
 
 void WlrOutput::_size_changed() {
 	if (wlr_output == NULL) {

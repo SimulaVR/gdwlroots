@@ -1,6 +1,5 @@
 #include <assert.h>
-#include "core/func_ref.h"
-#include "core/object.h"
+#include "core/object/object.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "wlr_surface.h"
@@ -12,6 +11,7 @@
 #include <unistd.h>
 #include <iostream>
 
+namespace wlr {
 extern "C" {
 #include <time.h>
 #include <wayland-server.h>
@@ -29,6 +29,7 @@ extern "C" {
 
 }
 
+
 bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 												size_t num_atoms, enum atom_name needle) {
 	xcb_atom_t atom = xwm->atoms[needle];
@@ -41,6 +42,9 @@ bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 
 	return false;
 }
+}
+
+using namespace wlr;
 
 void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, void *data) {
 	//std::cout << "WlrXWaylandSurface::handle_request_configure(..)" << std::endl;

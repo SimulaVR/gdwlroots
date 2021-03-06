@@ -1,13 +1,14 @@
 #include <assert.h>
 #include <time.h>
-#include "core/object.h"
-#include "core/os/input_event.h"
+#include "core/object/object.h"
+#include "core/input/input_event.h"
 #include "core/os/keyboard.h"
 #include "keycode_map.h"
 #include "scene/main/node.h"
 #include "wlr_keyboard.h"
 #include <iostream>
-using namespace std;
+
+namespace wlr {
 extern "C" {
 #include <xkbcommon/xkbcommon.h>
 #include <wlr/interfaces/wlr_keyboard.h>
@@ -24,6 +25,9 @@ static const struct wlr_keyboard_impl keyboard_impl = {
 };
 
 }
+}
+
+using namespace wlr;
 
 void WlrKeyboard::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_input", "event"),
@@ -116,7 +120,7 @@ void WlrKeyboard::_input(const Ref<InputEvent> &p_event) {
 
 	Ref<InputEventKey> k = p_event;
 	if (k.is_valid()) {
-		int scancode_with_modifiers = k->get_scancode_with_modifiers();
+		int scancode_with_modifiers = k->get_keycode_with_modifiers();
 		this->emit_signal("shortcut", scancode_with_modifiers, k->is_pressed());
 	}
 }

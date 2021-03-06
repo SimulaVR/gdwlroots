@@ -1,19 +1,23 @@
 #ifndef GDWLR_WLR_SURFACE_H
 #define GDWLR_WLR_SURFACE_H
-#include "core/object.h"
+#include "core/object/object.h"
 #include "scene/resources/texture.h"
 #include "wlr_output.h"
+
+namespace wlr {
 extern "C" {
 #include <wlr/types/wlr_surface.h>
 #include "wlr/interfaces/wlr_output.h"
 }
+}
+
 
 class WlrSurfaceAtResult;
 
 class WlrSurfaceState : public Resource {
 	GDCLASS(WlrSurfaceState, Resource);
 
-	const struct wlr_surface_state *state;
+	const struct wlr::wlr_surface_state *state;
 
 protected:
 	static void _bind_methods();
@@ -31,30 +35,30 @@ public:
 	int get_scale();
   void delete_state();
 
-	WlrSurfaceState(const struct wlr_surface_state *state);
+	WlrSurfaceState(const struct wlr::wlr_surface_state *state);
 
 };
 
 class WlrSurface : public Resource {
 	GDCLASS(WlrSurface, Resource);
 
-	struct wlr_surface *wlr_surface;
+	struct wlr::wlr_surface *wlr_surface;
   Array children;
 
-  static void handle_new_subsurface(struct wl_listener *listener, void *data);
-  struct wl_listener new_subsurface;
-  static void handle_destroy(struct wl_listener *listener, void *data);
-  struct wl_listener destroy;
-  static void handle_commit(struct wl_listener *listener, void *data);
-  struct wl_listener commit;
+  static void handle_new_subsurface(struct wlr::wl_listener *listener, void *data);
+  struct wlr::wl_listener new_subsurface;
+  static void handle_destroy(struct wlr::wl_listener *listener, void *data);
+  struct wlr::wl_listener destroy;
+  static void handle_commit(struct wlr::wl_listener *listener, void *data);
+  struct wlr::wl_listener commit;
 
   protected:
   static void _bind_methods();
 
   public:
-  static WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
+  static WlrSurface *from_wlr_surface(struct wlr::wlr_surface *wlr_surface);
 
-  struct wlr_surface *get_wlr_surface() const;
+  struct wlr::wlr_surface *get_wlr_surface() const;
 
   int get_sx();
   int get_sy();
@@ -78,33 +82,33 @@ class WlrSurface : public Resource {
 	bool is_wlr_xdg_surface();
 
 	WlrSurface(); // Necessary for Object
-	WlrSurface(struct wlr_surface *surface);
+	WlrSurface(struct wlr::wlr_surface *surface);
 };
 
 class WlrSubsurface : public Resource {
 	GDCLASS(WlrSubsurface, Resource);
 
-	struct wlr_subsurface *wlr_subsurface;
+	struct wlr::wlr_subsurface *wlr_subsurface;
   Array children;
 
-  static void handle_destroy(struct wl_listener *listener, void *data);
-  struct wl_listener destroy;
+  static void handle_destroy(struct wlr::wl_listener *listener, void *data);
+  struct wlr::wl_listener destroy;
 
  protected:
 	static void _bind_methods();
 
 	WlrSubsurface(); // Necessary for Object
-	WlrSubsurface(struct wlr_subsurface *subsurface);
+	WlrSubsurface(struct wlr::wlr_subsurface *subsurface);
 
  public:
 
-	static WlrSubsurface *from_wlr_subsurface(struct wlr_subsurface *wlr_subsurface);
+	static WlrSubsurface *from_wlr_subsurface(struct wlr::wlr_subsurface *wlr_subsurface);
 
-	WlrSurface *from_wlr_surface(struct wlr_surface *wlr_surface);
+	WlrSurface *from_wlr_surface(struct wlr::wlr_surface *wlr_surface);
 
 	WlrSurface *getWlrSurface();
 
-	struct wlr_subsurface *get_wlr_subsurface() const;
+	struct wlr::wlr_subsurface *get_wlr_subsurface() const;
 
 	int get_ssx();
 	int get_ssy();

@@ -3,15 +3,18 @@
 #include <stdint.h>
 #include "wayland_display.h"
 #include "wayland_global.h"
+
+namespace wlr {
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_data_device.h>
+}
 }
 
 class WlrDataDeviceManager : public WaylandGlobal {
 	GDCLASS(WlrDataDeviceManager, Node);
 
-	struct wlr_data_device_manager *wlr_data_device_manager;
+	struct wlr::wlr_data_device_manager *wlr_data_device_manager;
 
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);

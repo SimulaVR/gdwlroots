@@ -5,14 +5,15 @@
 #include "wayland_display.h"
 #include "wayland_global.h"
 #include "wlr_backend.h"
-extern "C" {
-#include <wlr/backend.h>
+
+namespace wlr {
+struct wlr_compositor;
 }
 
 class WlrCompositor : public WaylandGlobal {
 	GDCLASS(WlrCompositor, Node);
 
-	struct wlr_compositor *wlr_compositor;
+	struct wlr::wlr_compositor *wlr_compositor;
 
 	WlrRenderer *renderer;
 
@@ -20,10 +21,10 @@ class WlrCompositor : public WaylandGlobal {
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
 
-	struct wl_listener new_surface;
+	struct wlr::wl_listener new_surface;
 
 	static void handle_new_surface(
-		struct wl_listener *listener, void *data);
+		struct wlr::wl_listener *listener, void *data);
 
 protected:
 	static void _bind_methods();
@@ -31,7 +32,7 @@ protected:
 public:
 	WlrCompositor();
 	~WlrCompositor();
-  struct wlr_compositor * get_wlr_compositor();
+  struct wlr::wlr_compositor * get_wlr_compositor();
 };
 
 #endif

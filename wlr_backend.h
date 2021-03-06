@@ -3,12 +3,15 @@
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "renderer.h"
+
+namespace wlr {
 extern "C" {
 #include <wlr/backend.h>
 }
+}
 
 class WlrBackend : public Node {
-	struct wlr_backend backend;
+	struct wlr::wlr_backend backend;
 
 	GDCLASS(WlrBackend, Node);
 
@@ -21,7 +24,7 @@ protected:
 	void _notification(int p_what);
 
 public:
-	struct wlr_backend *get_wlr_backend();
+	struct wlr::wlr_backend *get_wlr_backend();
 	struct WlrRenderer *get_renderer();
 
 	WlrBackend();

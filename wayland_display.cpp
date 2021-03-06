@@ -1,8 +1,10 @@
-#include "core/print_string.h"
+#include "core/string/print_string.h"
 #include "wayland_display.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+using namespace wlr;
 
 struct wl_display *WaylandDisplay::get_wayland_display() {
 	return wl_display;
@@ -30,7 +32,7 @@ void WaylandDisplay::_bind_methods() {
 }
 
 void WaylandDisplay::run() {
-	if (socket_name.empty()) {
+	if (!socket_name.length()) {
 		socket_name = String(wl_display_add_socket_auto(wl_display));
 	} else {
 		wl_display_add_socket(wl_display, socket_name.utf8().ptr());
