@@ -1,4 +1,5 @@
 #include <assert.h>
+#include "debug.h"
 #include "core/os/input_event.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
@@ -26,6 +27,10 @@ void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 	// TODO: let godot user customize seat names
 	wlr_seat = wlr_seat_create(display->get_wayland_display(), "seat0");
 	set_capabilities(capabilities);
+
+	//Allows client cursor textures to filter down to Simula
+	request_cursor.notify = seat_request_cursor;
+	wl_signal_add(&wlr_seat->events.request_set_cursor, &request_cursor);
 }
 
 void WlrSeat::destroy_wl_global(WaylandDisplay *display) {
@@ -226,6 +231,18 @@ void WlrSeat::keyboard_notify_modifiers() {
 	wlr_seat_keyboard_notify_modifiers(wlr_seat, &keyboard->modifiers);
 }
 
+void WlrSeat::seat_request_cursor(struct wl_listener *listener, void *data) {
+	/* This event is rasied by the seat when a client provides a cursor image */
+	//log_str("WlrSeat::seat_request_cursor");
+	std::cout << "WlrSeat::seat_request_cursor" << std::endl;
+
+	WlrSeat *seat = wl_container_of(listener, seat, request_cursor);
+
+	struct wlr_seat_pointer_request_set_cursor_event *event = (struct wlr_seat_pointer_request_set_cursor_event *)data;
+	auto wlrSurfaceCursor = WlrSurface::from_wlr_surface(event->surface);
+	seat->emit_signal("request_set_cursor", wlrSurfaceCursor);
+}
+
 void WlrSeat::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_capabilities", "capabilities"),
 			&WlrSeat::set_capabilities);
@@ -261,6 +278,9 @@ void WlrSeat::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_pointer_focused_surface"),
 	 									 &WlrSeat::get_pointer_focused_surface);
+
+
+	ADD_SIGNAL(MethodInfo("request_set_cursor", PropertyInfo(Variant::OBJECT, "surface_cursor", PROPERTY_HINT_RESOURCE_TYPE, "WlrSurface")));
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "capabilities", PROPERTY_HINT_FLAGS,
 				"Pointer, Keyboard, Touch"),

@@ -15,9 +15,10 @@ extern "C" {
 
 class WlrSeat : public WaylandGlobal {
 	GDCLASS(WlrSeat, Node);
-
-	uint32_t capabilities = 0;
 	struct wlr_seat *wlr_seat;
+
+	struct wl_listener request_cursor;
+	static void seat_request_cursor(struct wl_listener *listener, void *data);
 
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
@@ -28,8 +29,10 @@ class WlrSeat : public WaylandGlobal {
 
   void pointer_notify_axis_continuous(double x, double y);
 
-protected:
-	static void _bind_methods();
+  uint32_t capabilities = 0;
+
+  protected:
+  static void _bind_methods();
   void _notification(int p_what);
 
 public:
