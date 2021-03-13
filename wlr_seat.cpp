@@ -233,9 +233,6 @@ void WlrSeat::keyboard_notify_modifiers() {
 
 void WlrSeat::seat_request_cursor(struct wl_listener *listener, void *data) {
 	/* This event is rasied by the seat when a client provides a cursor image */
-	//log_str("WlrSeat::seat_request_cursor");
-	std::cout << "WlrSeat::seat_request_cursor" << std::endl;
-
 	WlrSeat *seat = wl_container_of(listener, seat, request_cursor);
 
 	struct wlr_seat_pointer_request_set_cursor_event *event = (struct wlr_seat_pointer_request_set_cursor_event *)data;
