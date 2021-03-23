@@ -7,7 +7,7 @@ import SCons.Action
 import SCons.Builder
 import SCons.Util
 
-class ToolWLScannerWarning(SCons.Warnings.Warning):
+class ToolWLScannerWarning(SCons.Warnings.SConsWarning):
     pass
 
 class WLScannerNotFound(ToolWLScannerWarning):
