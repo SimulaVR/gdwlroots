@@ -159,6 +159,13 @@ WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
 			WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
 
+
+int WlrXdgSurface::get_pid() {
+	pid_t pid;
+  wl_client_get_credentials(wlr_xdg_surface->client->client, &pid, NULL, NULL);
+	return (int) pid;
+}
+
 void WlrXdgSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_role"), &WlrXdgSurface::get_role);
 	ClassDB::bind_method(D_METHOD("get_xdg_toplevel"),
@@ -177,6 +184,7 @@ void WlrXdgSurface::_bind_methods() {
       &WlrXdgSurface::for_each_surface);
 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
 			&WlrXdgSurface::surface_at);
+	ClassDB::bind_method(D_METHOD("get_pid"), &WlrXdgSurface::get_pid);
 
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);

@@ -457,6 +457,10 @@ Array WlrXWaylandSurface::get_children() {
   return children;
 }
 
+int WlrXWaylandSurface::get_pid() {
+	return ((int) wlr_xwayland_surface->pid);
+}
+
 void WlrXWaylandSurface::_bind_methods() {
 
   ClassDB::bind_method(D_METHOD("get_role"), &WlrXWaylandSurface::get_role);
@@ -486,6 +490,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_maximized", "maximized"), &WlrXWaylandSurface::set_maximized);
 	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"), &WlrXWaylandSurface::set_fullscreen);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXWaylandSurface::send_close);
+	ClassDB::bind_method(D_METHOD("get_pid"), &WlrXWaylandSurface::get_pid);
 
 	ADD_SIGNAL(MethodInfo("request_maximize", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));

@@ -121,6 +121,7 @@ class WlrXWaylandSurface: public Resource {
 	void for_each_surface(Ref<FuncRef> func);
 	/* void schedule_frame(Variant _output); */
 	WlrSurfaceAtResult *surface_at(double sx, double sy);
+	int get_pid();
 };
 
 class WlrXWayland: public WaylandGlobal {

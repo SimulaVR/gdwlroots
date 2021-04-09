@@ -178,6 +178,7 @@ public:
 			struct wlr_xdg_surface *xdg_surface);
 
 	Array get_children();
+	int get_pid();
 };
 
 VARIANT_ENUM_CAST(WlrXdgSurface::XdgSurfaceRole);
