@@ -199,8 +199,8 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 
 	generateMipmaps(texture, width, height, 0);
 
-	WlrGLES3Texture *wlr_texture = new WlrGLES3Texture(
-			storage, rid, width, height, fmt);
+	WlrGLES3Texture *wlr_texture = memnew(WlrGLES3Texture(
+			storage, rid, width, height, fmt));
 	wlr_texture->reference();
 	return wlr_texture->get_wlr_texture();
 }
