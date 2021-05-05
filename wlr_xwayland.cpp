@@ -31,6 +31,11 @@ extern "C" {
 
 bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 												size_t num_atoms, enum atom_name needle) {
+
+	if(xwm->atoms == NULL || atoms == NULL) {
+		return false;
+	}
+
 	xcb_atom_t atom = xwm->atoms[needle];
 
 	for (size_t i = 0; i < num_atoms; ++i) {
@@ -211,6 +216,8 @@ void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
 		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
 			//std::cout << "handle_map(..) map_child" << std::endl;
 			xwayland_surface->emit_signal("map_child", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->window_type == NULL) {
+			xwayland_surface->emit_signal("map", xwayland_surface);
 		} else {
 			//std::cout << "handle_map(..) called without anywhere to route surface!" << std::endl;
 			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
@@ -248,6 +255,8 @@ void WlrXWaylandSurface::handle_unmap(
 		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
 			//std::cout << "handle_unmap(..) unmap_child" << std::endl;
 			xwayland_surface->emit_signal("unmap_child", xwayland_surface);
+		} else if( xwayland_surface->wlr_xwayland_surface->window_type == NULL) {
+			xwayland_surface->emit_signal("unmap", xwayland_surface);
 		} else {
 			//std::cout << "handle_unmap(..) called without anywhere to route surface!" << std::endl;
 			xwayland_surface->emit_signal("unmap_free_child", xwayland_surface);
