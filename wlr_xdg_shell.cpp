@@ -156,7 +156,7 @@ WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_xdg_surface_surface_at(wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
 	//struct wlr_surface *result = wlr_surface_surface_at(wlr_xdg_surface->surface, sx, sy, &sub_x, &sub_y);
-	return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
+	return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
 
 
@@ -314,7 +314,7 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 	if (xdg_surface->data) {
 		return (WlrXdgSurface *)xdg_surface->data;
 	}
-	return memnew(WlrXdgSurface(xdg_surface));
+	return new WlrXdgSurface(xdg_surface);
 }
 
 extern "C" {
@@ -447,7 +447,7 @@ WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
 	if (surface->toplevel) {
 		return surface->toplevel;
 	}
-	return memnew(WlrXdgToplevel(xdg_toplevel));
+	return new WlrXdgToplevel(xdg_toplevel);
 }
 
 WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
@@ -655,7 +655,7 @@ WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
 	if (surface->popup) {
 		return surface->popup;
 	}
-	return memnew(WlrXdgPopup(xdg_popup));
+	return new WlrXdgPopup(xdg_popup);
 }
 
 void WlrXdgPopup::_bind_methods() {

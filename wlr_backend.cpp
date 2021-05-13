@@ -73,7 +73,7 @@ WlrBackend::WlrBackend() {
 	wlr_log_init(WLR_ERROR, NULL);
 	auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer);
 	if (auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer)) {
-		renderer = memnew(WlrGLES3Renderer(gles3_rasterizer));
+		renderer = new WlrGLES3Renderer(gles3_rasterizer);
        	} else {
 		print_line("Unsupported rasterizer backend");
 		assert(0);

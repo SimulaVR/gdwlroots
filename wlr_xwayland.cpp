@@ -166,7 +166,7 @@ WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
   double sub_x, sub_y;
   struct wlr_surface *result = wlr_surface_surface_at_spillover(wlr_xwayland_surface->surface, sx, sy, &sub_x, &sub_y);
 
-  return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
+  return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
 
 
@@ -269,7 +269,7 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
   if (xwayland_surface->data) {
     return (WlrXWaylandSurface *)xwayland_surface->data;
   }
-  return memnew(WlrXWaylandSurface(xwayland_surface));
+  return new WlrXWaylandSurface(xwayland_surface);
 }
 
 extern "C" {

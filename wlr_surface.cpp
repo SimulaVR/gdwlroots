@@ -120,19 +120,19 @@ int WlrSurface::get_sy() {
 }
 
 WlrSurfaceState *WlrSurface::alloc_current_state() const {
-	return memnew(WlrSurfaceState(&wlr_surface->current));
+	return new WlrSurfaceState(&wlr_surface->current);
 }
 
 WlrSurfaceState *WlrSurface::alloc_pending_state() const {
-	return memnew(WlrSurfaceState(&wlr_surface->pending));
+	return new WlrSurfaceState(&wlr_surface->pending);
 }
 
 WlrSurfaceState *WlrSurface::alloc_previous_state() const {
-	return memnew(WlrSurfaceState(&wlr_surface->previous));
+	return new WlrSurfaceState(&wlr_surface->previous);
 }
 
 void WlrSurfaceState::delete_state() {
-  memdelete(this);
+  delete this;
 }
 
 Array WlrSurface::get_damage_regions() const {
@@ -346,7 +346,7 @@ void WlrSurface::handle_commit(struct wl_listener *listener, void *data) {
 WlrSurfaceAtResult *WlrSurface::surface_at(double sx, double sy) {
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_surface_surface_at(wlr_surface, sx, sy, &sub_x, &sub_y);
-	return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
+	return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
 
 void WlrSurface::surface_send_leave(Object * _output) {
@@ -436,7 +436,7 @@ WlrSurface *WlrSurface::from_wlr_surface(struct wlr_surface *surface) {
 		auto s = (WlrSurface *)surface->data;
 		return s;
 	}
-	return memnew(WlrSurface(surface));
+	return new WlrSurface(surface);
 }
 
 
@@ -479,7 +479,7 @@ WlrSubsurface *WlrSubsurface::from_wlr_subsurface(struct wlr_subsurface *subsurf
 		auto s = (WlrSubsurface *)subsurface->data;
 		return s;
 	}
-	return memnew(WlrSubsurface(subsurface));
+	return new WlrSubsurface(subsurface);
 }
 
 struct wlr_subsurface *WlrSubsurface::get_wlr_subsurface() const {
@@ -511,7 +511,7 @@ WlrSurface *WlrSubsurface::from_wlr_surface(struct wlr_surface *surface) {
 		auto s = (WlrSurface *)surface->data;
 		return s;
 	}
-	return memnew(WlrSurface(surface));
+	return new WlrSurface(surface);
 }
 
 WlrSurface *WlrSubsurface::getWlrSurface() {
