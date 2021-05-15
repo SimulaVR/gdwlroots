@@ -14,6 +14,7 @@ extern "C" {
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_primary_selection.h>
 
 static inline int64_t timespec_to_msec(const struct timespec *a) {
 	return (int64_t)a->tv_sec * 1000 + a->tv_nsec / 1000000;
@@ -31,6 +32,16 @@ void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 	//Allows client cursor textures to filter down to Simula
 	request_cursor.notify = seat_request_cursor;
 	wl_signal_add(&wlr_seat->events.request_set_cursor, &request_cursor);
+
+	//Allow clipboarding to work across different apps
+	request_set_selection.notify = handle_request_set_selection;
+	wl_signal_add(&wlr_seat->events.request_set_selection,
+								&request_set_selection);
+	request_set_primary_selection.notify =
+		handle_request_set_primary_selection;
+	wl_signal_add(&wlr_seat->events.request_set_primary_selection,
+								&request_set_primary_selection);
+
 }
 
 void WlrSeat::destroy_wl_global(WaylandDisplay *display) {
@@ -238,6 +249,18 @@ void WlrSeat::seat_request_cursor(struct wl_listener *listener, void *data) {
 	struct wlr_seat_pointer_request_set_cursor_event *event = (struct wlr_seat_pointer_request_set_cursor_event *)data;
 	auto wlrSurfaceCursor = WlrSurface::from_wlr_surface(event->surface);
 	seat->emit_signal("request_set_cursor", wlrSurfaceCursor);
+}
+
+void WlrSeat::handle_request_set_selection(struct wl_listener *listener, void *data) {
+	WlrSeat *seat = wl_container_of(listener, seat, request_set_selection);
+	struct wlr_seat_request_set_selection_event *event = (struct wlr_seat_request_set_selection_event *) data;
+	wlr_seat_set_selection(seat->wlr_seat, event->source, event->serial);
+}
+
+void WlrSeat::handle_request_set_primary_selection(struct wl_listener *listener, void *data) {
+	WlrSeat *seat = wl_container_of(listener, seat, request_set_primary_selection);
+	struct wlr_seat_request_set_primary_selection_event *event = (struct wlr_seat_request_set_primary_selection_event *) data;
+	wlr_seat_set_primary_selection(seat->wlr_seat, event->source, event->serial);
 }
 
 void WlrSeat::_bind_methods() {

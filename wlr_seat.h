@@ -18,7 +18,11 @@ class WlrSeat : public WaylandGlobal {
 	struct wlr_seat *wlr_seat;
 
 	struct wl_listener request_cursor;
+	struct wl_listener request_set_selection;
+	struct wl_listener request_set_primary_selection;
 	static void seat_request_cursor(struct wl_listener *listener, void *data);
+	static void handle_request_set_selection(struct wl_listener *listener, void *data);
+	static void handle_request_set_primary_selection(struct wl_listener *listener, void *data);
 
 	void ensure_wl_global(WaylandDisplay *display);
 	void destroy_wl_global(WaylandDisplay *display);
