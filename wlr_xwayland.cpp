@@ -8,6 +8,7 @@
 #include "wlr_compositor.h"
 #include "wlr_output.h"
 #include "wlr_seat.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <iostream>

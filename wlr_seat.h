@@ -11,11 +11,15 @@
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_idle_inhibit_v1.h>
+#include <wlr/types/wlr_idle.h>
 }
 
 class WlrSeat : public WaylandGlobal {
 	GDCLASS(WlrSeat, Node);
 	struct wlr_seat *wlr_seat;
+	struct wlr_idle *wlr_idle;
+	struct wlr_idle_inhibit_manager_v1 *wlr_idle_inhibit_manager_v1;
 
 	struct wl_listener request_cursor;
 	struct wl_listener request_set_selection;

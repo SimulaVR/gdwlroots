@@ -25,8 +25,9 @@ void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 	if (wlr_seat) {
 		return;
 	}
-	// TODO: let godot user customize seat names
 	wlr_seat = wlr_seat_create(display->get_wayland_display(), "seat0");
+	wlr_idle = wlr_idle_create(display->get_wayland_display());
+	wlr_idle_inhibit_manager_v1 = wlr_idle_inhibit_v1_create(display->get_wayland_display());
 	set_capabilities(capabilities);
 
 	//Allows client cursor textures to filter down to Simula
@@ -41,6 +42,7 @@ void WlrSeat::ensure_wl_global(WaylandDisplay *display) {
 		handle_request_set_primary_selection;
 	wl_signal_add(&wlr_seat->events.request_set_primary_selection,
 								&request_set_primary_selection);
+
 
 }
 
@@ -61,6 +63,7 @@ WlrSeat::~WlrSeat() {
 void WlrSeat::pointer_notify_enter(Ref<WlrSurface> surface, double sx, double sy) {
   if (surface.is_valid()) {
 	//std:cout << "wlr_pointer_notify_enter=> surface: " << (surface->get_wlr_surface()) << "sx: " << sx << "sy: " << sy << std::endl;
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_pointer_notify_enter(wlr_seat,
 			surface->get_wlr_surface(), sx, sy);
   }
@@ -80,6 +83,7 @@ void WlrSeat::pointer_notify_motion(double sx, double sy) {
   //std:cout << "wlr_pointer_notify_motion=> surface: " << "sx: " << sx << "sy: " << sy << std::endl;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_pointer_notify_motion(wlr_seat, timespec_to_msec(&now), sx, sy);
 }
 
@@ -99,6 +103,7 @@ uint32_t WlrSeat::_pointer_notify_button(uint32_t time,
 	default:
 		assert(0);
 	}
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	return wlr_seat_pointer_notify_button(wlr_seat, time, wlr_button,
 			pressed ? WLR_BUTTON_PRESSED : WLR_BUTTON_RELEASED);
 }
@@ -126,6 +131,7 @@ uint32_t WlrSeat::_pointer_notify_axis(uint32_t time, ButtonList godot_button) {
 	default:
 		assert(0);
 	}
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_pointer_notify_axis(wlr_seat, time, axis,
 			value_discrete * 5, value_discrete, WLR_AXIS_SOURCE_WHEEL);
 	return 0;
@@ -179,6 +185,7 @@ uint32_t WlrSeat::pointer_notify_button(uint32_t button, bool pressed) {
 }
 
 void WlrSeat::pointer_notify_frame() {
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_pointer_notify_frame(wlr_seat);
 }
 
@@ -230,6 +237,7 @@ void WlrSeat::keyboard_notify_key(Ref<WlrEventKeyboardKey> key_event) {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	auto event = key_event->get_wlr_event();
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_keyboard_notify_key(wlr_seat, timespec_to_msec(&now),
 			event->keycode, event->state);
 }
@@ -239,6 +247,7 @@ void WlrSeat::keyboard_notify_modifiers() {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(wlr_seat);
+	wlr_idle_notify_activity(wlr_idle, wlr_seat);
 	wlr_seat_keyboard_notify_modifiers(wlr_seat, &keyboard->modifiers);
 }
 
@@ -248,6 +257,7 @@ void WlrSeat::seat_request_cursor(struct wl_listener *listener, void *data) {
 
 	struct wlr_seat_pointer_request_set_cursor_event *event = (struct wlr_seat_pointer_request_set_cursor_event *)data;
 	auto wlrSurfaceCursor = WlrSurface::from_wlr_surface(event->surface);
+	wlr_idle_notify_activity(seat->wlr_idle, seat->wlr_seat);
 	seat->emit_signal("request_set_cursor", wlrSurfaceCursor);
 }
 

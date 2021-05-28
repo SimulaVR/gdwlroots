@@ -2,6 +2,7 @@
 #include "renderer.h"
 #include "wlr_surface.h"
 #include "wlr_output.h"
+#include "debug.h"
 #include <iostream>
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
