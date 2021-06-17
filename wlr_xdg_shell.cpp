@@ -635,11 +635,17 @@ Rect2 WlrXdgPopup::get_geometry() {
 }
 
 int WlrXdgPopup::get_x() {
-	return wlr_xdg_popup->geometry.x;
+	int tsx;
+	int tsy;
+	wlr_xdg_popup_get_toplevel_coords(wlr_xdg_popup, wlr_xdg_popup->geometry.x, wlr_xdg_popup->geometry.y, &tsx, &tsy);
+	return tsx;
 }
 
 int WlrXdgPopup::get_y() {
-	return wlr_xdg_popup->geometry.y;
+	int tsx;
+	int tsy;
+	wlr_xdg_popup_get_toplevel_coords(wlr_xdg_popup, wlr_xdg_popup->geometry.x, wlr_xdg_popup->geometry.y, &tsx, &tsy);
+	return tsy;
 }
 
 int WlrXdgPopup::get_width() {
