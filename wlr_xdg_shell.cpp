@@ -61,6 +61,10 @@ WlrXdgShell::~WlrXdgShell() {
 }
 
 WlrXdgSurface::XdgSurfaceRole WlrXdgSurface::get_role() const {
+  if (!wlr_xdg_surface) {
+		return XDG_SURFACE_ROLE_NONE;
+	}
+
 	switch (wlr_xdg_surface->role) {
 	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
 		return XDG_SURFACE_ROLE_TOPLEVEL;
@@ -83,6 +87,9 @@ WlrXdgPopup *WlrXdgSurface::get_xdg_popup() const {
 }
 
 Rect2 WlrXdgSurface::get_geometry() {
+  if (!wlr_xdg_surface) {
+		return Rect2(-1, -1, -1, -1);
+  }
 	return Rect2(wlr_xdg_surface->geometry.x, wlr_xdg_surface->geometry.y,
 			wlr_xdg_surface->geometry.width, wlr_xdg_surface->geometry.height);
 }
@@ -92,6 +99,10 @@ Array WlrXdgSurface::get_children() {
   struct wlr_xdg_popup * xdgp;
 
   children.clear();
+
+  if (!wlr_xdg_surface) {
+		return children;
+  }
 
   wl_list_for_each(xdgp, &wlr_xdg_surface->popups, link) {
 		//std::cout << "get_children (data, mapped): (" << (xdgp->base->data) << ", " << (xdgp->base->mapped) << ")" << std::endl;
@@ -114,6 +125,9 @@ extern "C" {
 
 static void for_each_surface_iter(struct wlr_surface *surface,
 		int sx, int sy, void *data) {
+	if (!surface) {
+		return;
+	}
 	FuncRef *func = (FuncRef *)data;
 	Variant vSurface(WlrSurface::from_wlr_surface(surface))
 		, vSx(sx), vSy(sy);
@@ -127,6 +141,10 @@ static void for_each_surface_iter(struct wlr_surface *surface,
 
 static void for_each_surface_iter_ffi(struct wlr_surface *surface,
                                   int sx, int sy, void *data) {
+
+	if (!surface) {
+		return;
+	}
   surface_iter_t func = (surface_iter_t)data;
 
   WlrSurface * wlrSurface = WlrSurface::from_wlr_surface(surface);
@@ -138,12 +156,18 @@ static void for_each_surface_iter_ffi(struct wlr_surface *surface,
 }
 
 void WlrXdgSurface::for_each_surface(Ref<FuncRef> fn) {
+	if (!wlr_xdg_surface) {
+		return;
+	}
 	wlr_xdg_surface_for_each_surface(
 			wlr_xdg_surface, for_each_surface_iter, fn.ptr());
 }
 
 //void WlrXdgSurface::for_each_surface_ffi(surface_iter_t func) {
 void WlrXdgSurface::for_each_surface_ffi(void * func) {
+	if (!wlr_xdg_surface) {
+		return;
+	}
 	wlr_xdg_surface_for_each_surface(
                                    wlr_xdg_surface,
                                    for_each_surface_iter_ffi,
@@ -153,6 +177,9 @@ void WlrXdgSurface::for_each_surface_ffi(void * func) {
 }
 
 WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
+	if (!wlr_xdg_surface) {
+		return NULL;
+	}
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_xdg_surface_surface_at(wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
 	//struct wlr_surface *result = wlr_surface_surface_at(wlr_xdg_surface->surface, sx, sy, &sub_x, &sub_y);
@@ -161,9 +188,16 @@ WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
 
 
 int WlrXdgSurface::get_pid() {
+	if (!wlr_xdg_surface) {
+		return -1;
+	}
 	pid_t pid;
   wl_client_get_credentials(wlr_xdg_surface->client->client, &pid, NULL, NULL);
 	return (int) pid;
+}
+
+bool WlrXdgSurface::is_valid() {
+	return wlr_xdg_surface != NULL;
 }
 
 void WlrXdgSurface::_bind_methods() {
@@ -185,6 +219,7 @@ void WlrXdgSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("surface_at", "sx", "sy"),
 			&WlrXdgSurface::surface_at);
 	ClassDB::bind_method(D_METHOD("get_pid"), &WlrXdgSurface::get_pid);
+	ClassDB::bind_method(D_METHOD("is_valid"), &WlrXdgSurface::is_valid);
 
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_NONE);
 	BIND_ENUM_CONSTANT(XDG_SURFACE_ROLE_TOPLEVEL);
@@ -213,8 +248,8 @@ extern "C" {
 
 void WlrXdgSurface::handle_destroy(
 		struct wl_listener *listener, void *data) {
-	//std::cout << "WlrXdgSurface::handle_destroy called w/XdgSurface: " << xdg_surface << std::endl;
 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, destroy);
+	//std::cout << "WlrXdgSurface::handle_destroy called w/XdgSurface: " << xdg_surface << std::endl;
 
   wl_list_remove(&xdg_surface->destroy.link);
   wl_list_remove(&xdg_surface->ping_timeout.link);
@@ -229,6 +264,7 @@ void WlrXdgSurface::handle_destroy(
 	}
 
 	xdg_surface->emit_signal("destroy", xdg_surface);
+	xdg_surface->wlr_xdg_surface = NULL; //wlr_xdg_surface will no longer be valid after this
 }
 
 void WlrXdgSurface::handle_map(
@@ -260,7 +296,7 @@ void WlrXdgSurface::handle_ping_timeout(struct wl_listener *listener, void *data
 
 void WlrXdgSurface::handle_new_popup(struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, new_popup);
-	// std::cout << "WlrXdgSurface::handle_new_popup called w/xdg_surface: " << xdg_surface << " and popup: " << xdg_surface->popup << std::endl;
+	 //std::cout << "WlrXdgSurface::handle_new_popup called w/xdg_surface: " << xdg_surface << " and popup: " << xdg_surface->popup << std::endl;
 	xdg_surface->emit_signal("new_popup", xdg_surface);
 }
 
@@ -311,7 +347,10 @@ WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 
 WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 		struct wlr_xdg_surface *xdg_surface) {
-	if (xdg_surface->data) {
+
+	if (!xdg_surface) {
+    return NULL;
+	} else if (xdg_surface->data) {
 		return (WlrXdgSurface *)xdg_surface->data;
 	}
 	return new WlrXdgSurface(xdg_surface);
@@ -360,6 +399,7 @@ void WlrXdgToplevel::handle_request_minimize(
 
 void WlrXdgToplevel::handle_request_move(
 		struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXdgTopLevel::handle_request_move(..) " << std::endl;
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
 			listener, xdg_toplevel, request_move);
 	struct wlr_xdg_toplevel_move_event *event =
@@ -369,6 +409,7 @@ void WlrXdgToplevel::handle_request_move(
 
 void WlrXdgToplevel::handle_request_resize(
 		struct wl_listener *listener, void *data) {
+	//std::cout << "WlrXdgTopLevel::handle_request_resize(..) " << std::endl;
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
 			listener, xdg_toplevel, request_resize);
 	struct wlr_xdg_toplevel_resize_event *event =
@@ -444,52 +485,88 @@ WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
 		struct wlr_xdg_toplevel *xdg_toplevel) {
 	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_toplevel->base->data;
-	if (surface->toplevel) {
+  if (!xdg_toplevel) {
+    return NULL;
+	} else if (surface->toplevel) {
 		return surface->toplevel;
 	}
 	return new WlrXdgToplevel(xdg_toplevel);
 }
 
 WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
+  if (!wlr_xdg_toplevel) {
+    return NULL;
+  }
 	return from_wlr_xdg_toplevel(wlr_xdg_toplevel->parent->toplevel);
 }
 
 String WlrXdgToplevel::get_app_id() const {
+  if (!wlr_xdg_toplevel) {
+    return String();
+  }
 	return String(wlr_xdg_toplevel->app_id);
 }
 
 String WlrXdgToplevel::get_title() const {
+  if (!wlr_xdg_toplevel) {
+    return String();
+  }
 	return String(wlr_xdg_toplevel->title);
 }
 
 extern "C" {
 void WlrXdgToplevel::set_size(Vector2 size) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_size(wlr_xdg_toplevel->base, size.width, size.height);
 }
 }
 
 void WlrXdgToplevel::set_activated(bool activated) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_activated(wlr_xdg_toplevel->base, activated);
 }
 
 void WlrXdgToplevel::set_maximized(bool maximized) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_maximized(wlr_xdg_toplevel->base, maximized);
 }
 
 void WlrXdgToplevel::set_fullscreen(bool fullscreen) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_fullscreen(wlr_xdg_toplevel->base, fullscreen);
 }
 
 void WlrXdgToplevel::set_resizing(bool resizing) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_resizing(wlr_xdg_toplevel->base, resizing);
 }
 
 void WlrXdgToplevel::set_tiled(bool tiled) {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_set_tiled(wlr_xdg_toplevel->base, tiled );
 }
 
 void WlrXdgToplevel::send_close() {
+  if (!wlr_xdg_toplevel) {
+    return;
+  }
 	wlr_xdg_toplevel_send_close(wlr_xdg_toplevel->base);
+}
+
+bool WlrXdgToplevel::is_valid() {
+	return wlr_xdg_toplevel != NULL;
 }
 
 void WlrXdgToplevel::_bind_methods() {
@@ -509,6 +586,7 @@ void WlrXdgToplevel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_tiled", "tiled"),
 			&WlrXdgToplevel::set_tiled);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXdgToplevel::send_close);
+	ClassDB::bind_method(D_METHOD("is_valid"), &WlrXdgToplevel::is_valid);
 
 	ADD_SIGNAL(MethodInfo("request_maximize",
 			PropertyInfo(Variant::OBJECT,
@@ -658,7 +736,9 @@ int WlrXdgPopup::get_height() {
 
 WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
 	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_popup->base->data;
-	if (surface->popup) {
+	if (!xdg_popup) {
+		return NULL;
+	} else if (surface->popup) {
 		return surface->popup;
 	}
 	return new WlrXdgPopup(xdg_popup);

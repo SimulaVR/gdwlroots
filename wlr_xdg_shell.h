@@ -120,6 +120,7 @@ public:
 	void send_close();
 
 	void remove_listeners();
+	bool is_valid();
 };
 
 class WlrXdgSurface : public Resource {
@@ -179,6 +180,7 @@ public:
 
 	Array get_children();
 	int get_pid();
+	bool is_valid();
 };
 
 VARIANT_ENUM_CAST(WlrXdgSurface::XdgSurfaceRole);

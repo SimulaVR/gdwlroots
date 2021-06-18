@@ -113,22 +113,37 @@ struct wlr_surface *WlrSurface::get_wlr_surface() const {
 }
 
 int WlrSurface::get_sx() {
+	if (!wlr_surface) {
+	  return -1;
+	}
 	return wlr_surface->sx;
 }
 
 int WlrSurface::get_sy() {
+	if (!wlr_surface) {
+	  return -1;
+	}
 	return wlr_surface->sy;
 }
 
 WlrSurfaceState *WlrSurface::alloc_current_state() const {
+  if (!wlr_surface) {
+    return NULL;
+  }
 	return new WlrSurfaceState(&wlr_surface->current);
 }
 
 WlrSurfaceState *WlrSurface::alloc_pending_state() const {
+  if (!wlr_surface) {
+    return NULL;
+  }
 	return new WlrSurfaceState(&wlr_surface->pending);
 }
 
 WlrSurfaceState *WlrSurface::alloc_previous_state() const {
+  if (!wlr_surface) {
+    return NULL;
+  }
 	return new WlrSurfaceState(&wlr_surface->previous);
 }
 
@@ -138,6 +153,10 @@ void WlrSurfaceState::delete_state() {
 
 Array WlrSurface::get_damage_regions() const {
 	Array out;
+
+  if (!wlr_surface) {
+    return out;
+  }
 
 	if (!wlr_surface_has_buffer(this->wlr_surface)) {
 		return out;
@@ -172,6 +191,10 @@ Array WlrSurface::get_damage_regions() const {
 // WARNING: Experimental/untested function.
 Array WlrSurface::get_damage_regions_with_damage(Array gsvsDamageBoxes) const {
   Array out;
+
+  if (!wlr_surface) {
+    return out;
+  }
 
   //Load the surface damage in `dmg`
   pixman_region32_t dmg;
@@ -236,6 +259,9 @@ Array WlrSurface::get_damage_regions_with_damage(Array gsvsDamageBoxes) const {
 Array WlrSurface::get_opaque_regions() const {
 	Array out;
 
+  if (!wlr_surface) {
+    return out;
+  }
 
 	pixman_region32_t opaque_region = wlr_surface->opaque_region;
 
@@ -263,6 +289,10 @@ Array WlrSurface::get_opaque_regions() const {
 Array WlrSurface::get_input_regions() const {
 	Array out;
 
+  if (!wlr_surface) {
+    return out;
+  }
+
 	pixman_region32_t input_region = wlr_surface->input_region;
 
 	int len = -1;
@@ -287,12 +317,18 @@ Array WlrSurface::get_input_regions() const {
 }
 
 Ref<Texture> WlrSurface::get_texture() const {
+  if (!wlr_surface) {
+    return NULL;
+  }
 	struct wlr_texture *texture = wlr_surface_get_texture(wlr_surface);
 	return Ref<Texture>(
 			WlrRenderer::get_singleton()->texture_from_wlr(texture));
 }
 
 void WlrSurface::send_frame_done() {
+  if (!wlr_surface) {
+    return;
+  }
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	wlr_surface_send_frame_done(wlr_surface, &now);
@@ -302,6 +338,10 @@ Array WlrSurface::get_children() {
   struct wlr_subsurface *subsurface;
 
   children.clear();
+
+  if (!wlr_surface) {
+    return children;
+  }
 
   wl_list_for_each(subsurface, &wlr_surface->subsurfaces, parent_link) {
 
@@ -333,6 +373,7 @@ void WlrSurface::handle_destroy(
   struct wlr_surface * surface = (struct wlr_surface *)data;
 	WlrSurface * wlrSurface = WlrSurface::from_wlr_surface(surface);
 	wlrSurface->emit_signal("destroy", wlrSurface);
+	wlrSurface->wlr_surface = NULL; //wlr_surface will no longer be valid after this
 }
 
 
@@ -345,12 +386,19 @@ void WlrSurface::handle_commit(struct wl_listener *listener, void *data) {
 
 
 WlrSurfaceAtResult *WlrSurface::surface_at(double sx, double sy) {
+	if (!wlr_surface) {
+		return NULL;
+	}
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_surface_surface_at(wlr_surface, sx, sy, &sub_x, &sub_y);
 	return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
 }
 
 void WlrSurface::surface_send_leave(Object * _output) {
+	if (!wlr_surface) {
+	  return;
+	}
+
   if (auto output = Object::cast_to<WlrOutput>(_output)) {
 		auto wlrout = output->get_wlr_output();
 		wlr_surface_send_leave(wlr_surface, wlrout);
@@ -361,9 +409,17 @@ void WlrSurface::surface_send_leave(Object * _output) {
 }
 
 WlrSurface *WlrSurface::get_root_surface() {
+	if (!wlr_surface) {
+	  return NULL;
+	}
+
 	struct wlr_surface *wlr_surface_get_root_surface(wlr_surface);
 	WlrSurface * rootWlrSurface = WlrSurface::from_wlr_surface(wlr_surface);
 	return rootWlrSurface;
+}
+
+bool WlrSurface::is_valid() {
+  return wlr_surface != NULL;
 }
 
 void WlrSurface::_bind_methods() {
@@ -397,6 +453,7 @@ void WlrSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_wlr_subsurface"), &WlrSurface::is_wlr_subsurface);
 	ClassDB::bind_method(D_METHOD("is_wlr_xwayland_surface"), &WlrSurface::is_wlr_xwayland_surface);
 	ClassDB::bind_method(D_METHOD("is_wlr_xdg_surface"), &WlrSurface::is_wlr_xdg_surface);
+	ClassDB::bind_method(D_METHOD("is_valid"), &WlrSurface::is_valid);
 
 	ADD_SIGNAL(MethodInfo("new_subsurface", PropertyInfo(Variant::OBJECT, "surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrSurface")));
@@ -446,6 +503,7 @@ void WlrSubsurface::handle_destroy(struct wl_listener *listener, void *data) {
   struct wlr_subsurface * subsurface = (struct wlr_subsurface *)data;
 	WlrSubsurface * wlrSubsurface = WlrSubsurface::from_wlr_subsurface(subsurface);
 	wlrSubsurface->emit_signal("destroy", wlrSubsurface);
+	wlrSubsurface->wlr_subsurface = NULL; //wlr_subsurface will no longer be valid after this
 }
 
 
@@ -488,17 +546,28 @@ struct wlr_subsurface *WlrSubsurface::get_wlr_subsurface() const {
 }
 
 int WlrSubsurface::get_ssx() {
+	if (!wlr_subsurface) {
+		return -1;
+	}
 
   return wlr_subsurface->current.x;
 }
 
 int WlrSubsurface::get_ssy() {
+	if (!wlr_subsurface) {
+		return -1;
+	}
   return wlr_subsurface->current.y;
 }
 
 Ref<Texture> WlrSubsurface::get_texture() const {
   struct wlr_surface * surface = wlr_subsurface->surface;
 	struct wlr_texture *texture = wlr_surface_get_texture(surface);
+
+	if (!wlr_subsurface || !surface || !texture) {
+		return NULL;
+	}
+
 	return Ref<Texture>(
 			WlrRenderer::get_singleton()->texture_from_wlr(texture));
 }
@@ -525,6 +594,10 @@ Array WlrSubsurface::get_children() {
   return surface_->get_children();
 }
 
+bool WlrSubsurface::is_valid() {
+  return wlr_subsurface != NULL;
+}
+
 void WlrSubsurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_ssx"), &WlrSubsurface::get_ssx);
 	ClassDB::bind_method(D_METHOD("get_ssy"), &WlrSubsurface::get_ssy);
@@ -535,6 +608,7 @@ void WlrSubsurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_wlr_surface_parent"), &WlrSubsurface::get_wlr_surface_parent);
 
 	ClassDB::bind_method(D_METHOD("get_children"), &WlrSubsurface::get_children);
+	ClassDB::bind_method(D_METHOD("is_valid"), &WlrSubsurface::is_valid);
 
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrSubsurface")));
 }

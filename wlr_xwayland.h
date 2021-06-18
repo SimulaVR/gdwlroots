@@ -73,6 +73,7 @@ class WlrXWaylandSurface: public Resource {
 	/* struct wl_listener handle_set_class; */
 	static WlrXWaylandSurface *from_wlr_xwayland_surface(struct wlr_xwayland_surface *xwayland_surface);
   Array get_children();
+	bool is_valid();
 
 	/* enum TilingEdges { */
   /*                   TILING_EDGE_NONE = 0, */

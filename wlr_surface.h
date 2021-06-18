@@ -76,6 +76,7 @@ class WlrSurface : public Resource {
 	bool is_wlr_subsurface();
 	bool is_wlr_xwayland_surface();
 	bool is_wlr_xdg_surface();
+	bool is_valid();
 
 	WlrSurface(); // Necessary for Object
 	WlrSurface(struct wlr_surface *surface);
@@ -115,6 +116,7 @@ class WlrSubsurface : public Resource {
 
 	WlrSurface *get_wlr_surface_parent();
 	WlrSurface *get_wlr_surface();
+	bool is_valid();
 
 };
 

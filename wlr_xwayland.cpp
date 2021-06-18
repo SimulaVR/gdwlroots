@@ -127,14 +127,23 @@ WlrXWayland::~WlrXWayland() {
 }
 
 void WlrXWaylandSurface::terminate() {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   kill(wlr_xwayland_surface->pid, SIGTERM);
 }
 
 Rect2 WlrXWaylandSurface::get_geometry() {
+	if (!wlr_xwayland_surface) {
+		return Rect2(-1, -1, -1, -1);
+	}
 	return Rect2(0, 0, wlr_xwayland_surface->width, wlr_xwayland_surface->height);
 }
 
 WlrSurface *WlrXWaylandSurface::get_wlr_surface() const {
+	if (!wlr_xwayland_surface) {
+		return NULL;
+	}
   return WlrSurface::from_wlr_surface(wlr_xwayland_surface->surface);
 }
 
@@ -164,6 +173,9 @@ struct wlr_surface *wlr_surface_surface_at_spillover(struct wlr_surface *surface
 }
 
 WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
+	if (!wlr_xwayland_surface) {
+		return NULL;
+	}
   double sub_x, sub_y;
   struct wlr_surface *result = wlr_surface_surface_at_spillover(wlr_xwayland_surface->surface, sx, sy, &sub_x, &sub_y);
 
@@ -187,11 +199,12 @@ void WlrXWaylandSurface::handle_destroy(
   wl_list_remove(&xwayland_surface->map.link);
   wl_list_remove(&xwayland_surface->unmap.link);
 
-  xwayland_surface->emit_signal("destroy", xwayland_surface); //We `delete` this surface elsewhere
+  xwayland_surface->emit_signal("destroy", xwayland_surface);
+	xwayland_surface->wlr_xwayland_surface = NULL; //wlr_xwayland_surface will no longer be valid after this
 }
 
 void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
-	//std::cout << "WlrXWaylandSurface::handle_map(..)" << std::endl;
+	  //std::cout << "WlrXWaylandSurface::handle_map(..)" << std::endl;
 		WlrXWaylandSurface *xwayland_surface = wl_container_of(
 																													 listener, xwayland_surface, map);
 
@@ -267,7 +280,9 @@ void WlrXWaylandSurface::handle_unmap(
 
 WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
     struct wlr_xwayland_surface *xwayland_surface) {
-  if (xwayland_surface->data) {
+	if (!xwayland_surface) {
+		return NULL;
+	} else if (xwayland_surface->data) {
     return (WlrXWaylandSurface *)xwayland_surface->data;
   }
   return new WlrXWaylandSurface(xwayland_surface);
@@ -353,14 +368,23 @@ WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_sur
 }
 
 WlrXWaylandSurface *WlrXWaylandSurface::get_parent() const {
+	if (!wlr_xwayland_surface || !wlr_xwayland_surface->parent) {
+		return NULL;
+	}
   return from_wlr_xwayland_surface(wlr_xwayland_surface->parent);
 }
 
 String WlrXWaylandSurface::get_title() const {
+	if (!wlr_xwayland_surface) {
+		return String();
+	}
   return String(wlr_xwayland_surface->title);
 }
 
 void WlrXWaylandSurface::set_size(Vector2 size) {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   wlr_xwayland_surface_configure(wlr_xwayland_surface,
                                 wlr_xwayland_surface->x,
                                 wlr_xwayland_surface->y,
@@ -369,6 +393,9 @@ void WlrXWaylandSurface::set_size(Vector2 size) {
 }
 
 void WlrXWaylandSurface::set_xy(Vector2 xy) {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   wlr_xwayland_surface_configure(wlr_xwayland_surface,
 																 xy.width,
 																 xy.height,
@@ -378,44 +405,74 @@ void WlrXWaylandSurface::set_xy(Vector2 xy) {
 
 
 void WlrXWaylandSurface::set_activated(bool activated) {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   //wlr_xwayland_or_surface_wants_focus(wlr_xwayland_surface);
   wlr_xwayland_surface_activate(wlr_xwayland_surface, activated);
 }
 
 void WlrXWaylandSurface::set_maximized(bool maximized) {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   wlr_xwayland_surface_set_maximized(wlr_xwayland_surface, maximized);
 }
 
 void WlrXWaylandSurface::set_fullscreen(bool fullscreen) {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   wlr_xwayland_surface_set_fullscreen(wlr_xwayland_surface, fullscreen);
 }
 
 void WlrXWaylandSurface::send_close() {
+	if (!wlr_xwayland_surface) {
+		return;
+	}
   wlr_xwayland_surface_close(wlr_xwayland_surface);
 }
 
 bool WlrXWaylandSurface::get_maximized() const {
+	if (!wlr_xwayland_surface) {
+		return false;
+	}
   bool maximized = wlr_xwayland_surface->maximized_vert && wlr_xwayland_surface->maximized_horz;
   return maximized;
 }
 
 bool WlrXWaylandSurface::get_fullscreen() const {
+	if (!wlr_xwayland_surface) {
+		return false;
+	}
   return wlr_xwayland_surface->fullscreen;
 }
 
 uint16_t WlrXWaylandSurface::get_width() const {
+	if (!wlr_xwayland_surface) {
+		return false;
+	}
   return wlr_xwayland_surface->width;
 }
 
 String WlrXWaylandSurface::get_role() const {
+	if (!wlr_xwayland_surface) {
+		return String();
+	}
   return wlr_xwayland_surface->role;
 }
 
 int16_t WlrXWaylandSurface::get_x() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->x;
 }
 
 int16_t WlrXWaylandSurface::get_y() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->y;
 }
 
@@ -430,22 +487,37 @@ void WlrXWaylandSurface::print_xwayland_surface_properties() {
 }
 
 uint16_t WlrXWaylandSurface::get_height() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->height;
 }
 
 uint16_t WlrXWaylandSurface::get_min_width() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->size_hints->min_width;
 }
 
 uint16_t WlrXWaylandSurface::get_min_height() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->size_hints->min_height;
 }
 
 uint16_t WlrXWaylandSurface::get_max_width() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->size_hints->max_width;
 }
 
 uint16_t WlrXWaylandSurface::get_max_height() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
   return wlr_xwayland_surface->size_hints->max_height;
 }
 
@@ -453,6 +525,10 @@ Array WlrXWaylandSurface::get_children() {
   struct wlr_xwayland_surface * xws;
 
   children.clear();
+
+	if (!wlr_xwayland_surface) {
+    return children;
+	}
 
   wl_list_for_each(xws, &wlr_xwayland_surface->children, parent_link) {
 		//std::cout << "get_children (data, mapped): (" << (xws->data) << ", " << (xws->mapped) << ")" << std::endl;
@@ -468,7 +544,14 @@ Array WlrXWaylandSurface::get_children() {
 }
 
 int WlrXWaylandSurface::get_pid() {
+	if (!wlr_xwayland_surface) {
+    return -1;
+	}
 	return ((int) wlr_xwayland_surface->pid);
+}
+
+bool WlrXWaylandSurface::is_valid() {
+	return wlr_xwayland_surface != NULL;
 }
 
 void WlrXWaylandSurface::_bind_methods() {
@@ -501,6 +584,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_fullscreen", "fullscreen"), &WlrXWaylandSurface::set_fullscreen);
 	ClassDB::bind_method(D_METHOD("send_close"), &WlrXWaylandSurface::send_close);
 	ClassDB::bind_method(D_METHOD("get_pid"), &WlrXWaylandSurface::get_pid);
+	ClassDB::bind_method(D_METHOD("is_valid"), &WlrXWaylandSurface::is_valid);
 
 	ADD_SIGNAL(MethodInfo("request_maximize", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT, "xwayland_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXWaylandSurface")));
