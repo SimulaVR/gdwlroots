@@ -12,8 +12,8 @@
 //#include "xwayland/xwm.h" We are unable to access this :(
 extern "C" {
 /* #include <wlr/types/wlr_output_damage.h> */
-/* #include <wlr/xcursor.h> */
-/* #include <wlr/types/wlr_xcursor_manager.h> */
+#include <wlr/xcursor.h>
+#include <wlr/types/wlr_xcursor_manager.h>
 #include <wayland-server.h>
 
 //We override xwayland.h to avoid the `class` keyword
@@ -130,6 +130,7 @@ class WlrXWayland: public WaylandGlobal {
 	GDCLASS(WlrXWayland, Node);
 
 	struct wlr_xwayland *wlr_xwayland;
+	struct wlr_xcursor_manager *wlr_xcursor_manager;
   /* WaylandDisplay *waylandDisplay = NULL; */ //we already have this via WaylandGlobal
 
 	void ensure_wl_global(WaylandDisplay *display);

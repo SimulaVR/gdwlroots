@@ -99,6 +99,22 @@ void WlrXWayland::start_xwayland(Object* _compositor, Object* _seat) {
 
 		wlr_xwayland_set_seat(wlr_xwayland, w_seat);
 
+		wlr_xcursor_manager = wlr_xcursor_manager_create("default", 24);
+		if (wlr_xcursor_manager_load(wlr_xcursor_manager, 1)) {
+			std::cout << "Failed to load wlr_xcursor_manager!" << std::endl;
+		}
+
+		struct wlr_xcursor *xcursor = wlr_xcursor_manager_get_xcursor(wlr_xcursor_manager, "left_ptr", 1);
+
+		if (xcursor != NULL) {
+			struct wlr_xcursor_image *image = xcursor->images[0];
+
+			//necessary to prevent XWayland surface cursors from showing up as "x"'s:
+			wlr_xwayland_set_cursor(wlr_xwayland, image->buffer,
+															image->width * 4, image->width, image->height, image->hotspot_x,
+															image->hotspot_y);
+		}
+
   } else {
     std::cout << "Failed to start xwayland." << std::endl;
   }
