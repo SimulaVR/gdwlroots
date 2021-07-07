@@ -63,6 +63,7 @@ class WlrSurface : public Resource {
   WlrSurfaceState *alloc_previous_state() const;
   Ref<Texture> get_texture() const;
   Array get_damage_regions() const;
+	Array accumulate_damage_regions(Array surfaces, Array xs, Array ys);
 	Array get_damage_regions_with_damage(Array gsvsDamageBoxes) const;
   Array get_opaque_regions() const;
   Array get_input_regions() const;

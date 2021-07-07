@@ -187,6 +187,68 @@ Array WlrSurface::get_damage_regions() const {
 	return out;
 }
 
+Array WlrSurface::accumulate_damage_regions(Array surfaces, Array xs, Array ys) {
+	Array out;
+
+  //Validity checking
+  if (!wlr_surface) {
+    return out;
+  }
+
+	if (!wlr_surface_has_buffer(this->wlr_surface)) {
+		return out;
+  }
+
+  if ((surfaces.size() != xs.size()) || (surfaces.size() != ys.size())) {
+	  return out;
+	}
+
+  //Accumulate dmg_accumulated across all of the surfaces
+	pixman_region32_t dmg_accumulated;
+	pixman_region32_init(&dmg_accumulated);
+  int m = surfaces.size();
+  for (int k = 0; k < m; k++) {
+		Variant surface_ = surfaces.pop_front();
+		Variant x_ = xs.pop_front();
+		Variant y_ = ys.pop_front();
+		Object * surfaceObj = (Object *) surface_;
+    WlrSurface * surface = dynamic_cast<WlrSurface *>(surfaceObj);
+		int x = (int) x_;
+		int y = (int) y_;
+
+		pixman_region32_t dmg;
+		pixman_region32_init(&dmg);
+		wlr_surface_get_effective_damage(surface->wlr_surface, &dmg);
+    pixman_region32_translate(&dmg, x, y); //move us from surface to gsvs coordinates
+    pixman_region32_union(&dmg_accumulated, &dmg_accumulated, &dmg);
+	  pixman_region32_fini(&dmg);
+
+	}
+
+  //Convert the dmg_accumulated into a Godot Array of Rect2 (gsvs local coordinates)
+	int len = -1;
+	pixman_box32_t* rects =	pixman_region32_rectangles(&dmg_accumulated, &len);
+
+	for (int i = 0; i < len; i++) {
+		real_t x1 = rects[i].x1;
+		real_t x2 = rects[i].x2;
+		real_t y1 = rects[i].y1;
+		real_t y2 = rects[i].y2;
+
+		real_t w = x2 - x1;
+		real_t h = y2 - y1;
+
+		Rect2 gRect(x1, y1, w, h);
+
+		out.push_back(gRect);
+	}
+
+  //Clean up dmg_accumulated, and push out Array of Rect2
+	pixman_region32_fini(&dmg_accumulated);
+
+	return out;
+}
+
 // We assume that `gsvsDamageBoxes` are already in surface-local coordinates
 // WARNING: Experimental/untested function.
 Array WlrSurface::get_damage_regions_with_damage(Array gsvsDamageBoxes) const {
@@ -435,6 +497,8 @@ void WlrSurface::_bind_methods() {
 			&WlrSurface::get_texture);
 	ClassDB::bind_method(D_METHOD("get_damage_regions"),
 			&WlrSurface::get_damage_regions);
+	ClassDB::bind_method(D_METHOD("accumulate_damage_regions"),
+			&WlrSurface::accumulate_damage_regions);
 
 	ClassDB::bind_method(D_METHOD("get_damage_regions_with_damage", "damage"),
 											 &WlrSurface::get_damage_regions_with_damage);
