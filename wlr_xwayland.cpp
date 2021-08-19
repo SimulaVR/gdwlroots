@@ -48,6 +48,21 @@ bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 	return false;
 }
 
+char *xwm_get_atom_name(struct wlr_xwm *xwm, xcb_atom_t atom) {
+	xcb_get_atom_name_cookie_t name_cookie =
+		xcb_get_atom_name(xwm->xcb_conn, atom);
+	xcb_get_atom_name_reply_t *name_reply =
+		xcb_get_atom_name_reply(xwm->xcb_conn, name_cookie, NULL);
+	if (name_reply == NULL) {
+		return NULL;
+	}
+	size_t len = xcb_get_atom_name_name_length(name_reply);
+	char *buf = xcb_get_atom_name_name(name_reply); // not a C string
+	char *name = strndup(buf, len);
+	free(name_reply);
+	return name;
+}
+
 void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, void *data) {
 	//std::cout << "WlrXWaylandSurface::handle_request_configure(..)" << std::endl;
   struct wlr_xwayland_surface_configure_event * event = (wlr_xwayland_surface_configure_event *) data;
@@ -234,22 +249,25 @@ void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
 																								1,
 																								NET_WM_WINDOW_TYPE_NORMAL);
 
+		bool is_menu_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_MENU);
+
+    // auto wType = xwm_get_atom_name(xwayland_surface->wlr_xwayland_surface->xwm, *xwayland_surface->wlr_xwayland_surface->window_type);
+	  // std::cout << "WINDOW TYPE: " << wType << std::endl;
+
 		if ( is_splash_surface ) {
-			//std::cout << "handle_map(..) splash surface -> map" << std::endl;
 			xwayland_surface->emit_signal("map", xwayland_surface);
-    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_normal_surface) ) {
-			//std::cout << "handle_map(..) map_free_child" << std::endl;
+    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_menu_surface ) {
 			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
-		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
-			//std::cout << "handle_map(..) map" << std::endl;
+		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && !is_normal_surface && !is_menu_surface ) {
 			xwayland_surface->emit_signal("map", xwayland_surface);
 		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
-			//std::cout << "handle_map(..) map_child" << std::endl;
 			xwayland_surface->emit_signal("map_child", xwayland_surface);
 		} else if( xwayland_surface->wlr_xwayland_surface->window_type == NULL) {
 			xwayland_surface->emit_signal("map", xwayland_surface);
 		} else {
-			//std::cout << "handle_map(..) called without anywhere to route surface!" << std::endl;
 			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
 		}
 }
@@ -272,14 +290,18 @@ void WlrXWaylandSurface::handle_unmap(
 																								1,
 																								NET_WM_WINDOW_TYPE_NORMAL);
 
+		bool is_menu_surface = xwm_atoms_contains(xwayland_surface->wlr_xwayland_surface->xwm,
+																								xwayland_surface->wlr_xwayland_surface->window_type,
+																								1,
+																								NET_WM_WINDOW_TYPE_MENU);
+
 		//roughly mirrors our logic in handle_map
 		if ( is_splash_surface ) {
 			//std::cout << "handle_unmap(..) splash surface -> unmap" << std::endl;
 			xwayland_surface->emit_signal("unmap", xwayland_surface);
-    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && (! is_normal_surface) ) {
-			//std::cout << "handle_unmap(..) unmap_free_child" << std::endl;
+    } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_menu_surface ) {
 			xwayland_surface->emit_signal("unmap_free_child", xwayland_surface);
-		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
+		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && !is_normal_surface && !is_menu_surface ) {
 			//std::cout << "handle_unmap(..) unmap" << std::endl;
 			xwayland_surface->emit_signal("unmap", xwayland_surface);
 		} else if( xwayland_surface->wlr_xwayland_surface->parent != NULL && !is_normal_surface ) {
