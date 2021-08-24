@@ -259,6 +259,8 @@ void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
 
 		if ( is_splash_surface ) {
 			xwayland_surface->emit_signal("map", xwayland_surface);
+		} else if ( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
+				xwayland_surface->emit_signal("map", xwayland_surface);
     } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_menu_surface ) {
 			xwayland_surface->emit_signal("map_free_child", xwayland_surface);
 		} else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && !is_normal_surface && !is_menu_surface ) {
@@ -298,6 +300,8 @@ void WlrXWaylandSurface::handle_unmap(
 		//roughly mirrors our logic in handle_map
 		if ( is_splash_surface ) {
 			//std::cout << "handle_unmap(..) splash surface -> unmap" << std::endl;
+			xwayland_surface->emit_signal("unmap", xwayland_surface);
+		} else if ( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_normal_surface ) {
 			xwayland_surface->emit_signal("unmap", xwayland_surface);
     } else if( xwayland_surface->wlr_xwayland_surface->parent == NULL && is_menu_surface ) {
 			xwayland_surface->emit_signal("unmap_free_child", xwayland_surface);
