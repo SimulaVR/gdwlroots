@@ -4,13 +4,81 @@
 #include "gles3_renderer.h"
 #include<string>
 #include <iostream>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
+#include "core/os/os.h"
+
+#include <X11/Xlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+#include <strings.h>
+
+// Apparently needed for GLES2/gl2ext.h import
+#ifndef GL_APIENTRY
+#define GL_APIENTRY
+#endif
+#include <GLES2/gl2ext.h>
+
+#include <libdrm/drm_fourcc.h>
+
 extern "C" {
+// wlroots headers use C99 stuff that will cause C++ compiler to complain unless we wrap in #static
 #define static
 #include <wayland-server.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/interface.h>
 #include <wlr/util/log.h>
 #undef static
+}
+
+// Launch with SIMULA_DMA_DEBUG=1 to get dma buffer log statements/verification that dma buffers are being used
+static bool dma_debug_enabled() {
+	static int cached = -1;
+	if (cached == -1) {
+		const char *value = getenv("SIMULA_DMA_DEBUG");
+		bool enabled = value != NULL && *value != '\0' &&
+				strcmp(value, "0") != 0 &&
+				strcasecmp(value, "false") != 0 &&
+				strcasecmp(value, "off") != 0;
+		cached = enabled ? 1 : 0;
+	}
+	return cached == 1;
+}
+
+void log_debug_dma(const char *fmt, ...) {
+	if (!dma_debug_enabled()) {
+		return;
+	}
+
+	FILE *f = fopen("/tmp/simula_dma_log.txt", "a");
+	if (f) {
+		va_list args;
+		va_start(args, fmt);
+		vfprintf(f, fmt, args);
+		va_end(args);
+		fclose(f);
+	}
+}
+
+static bool egl_has_extension(const char *exts, const char *name) {
+	if (!exts || !name || !*name) {
+		return false;
+	}
+	const char *start = exts;
+	while ((start = strstr(start, name)) != nullptr) {
+		const char *end = start + strlen(name);
+		if ((start == exts || start[-1] == ' ') && (*end == ' ' || *end == '\0')) {
+			return true;
+		}
+		start = end;
+	}
+	return false;
+}
+
+extern "C" {
 
 #define _GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
 
@@ -93,6 +161,7 @@ const struct gles3_pixel_format *get_gles3_format_from_wl(
 
 static const enum wl_shm_format *renderer_formats(
 		struct wlr_renderer *renderer, size_t *len) {
+	log_debug_dma("DEBUG: renderer_formats called\n");
 	*len = sizeof(wl_formats) / sizeof(wl_formats[0]);
 	return wl_formats;
 }
@@ -144,9 +213,12 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 		struct wlr_renderer *_renderer, enum wl_shm_format wl_fmt,
 		uint32_t stride, uint32_t width, uint32_t height, const void *data) {
 
+	log_debug_dma("DEBUG: texture_from_pixels called (%dx%d)\n", width, height);
+
 	struct WlrGLES3Renderer::renderer_state *state =
 		(struct WlrGLES3Renderer::renderer_state *)_renderer;
 	WlrGLES3Renderer *renderer = state->godot_renderer;
+	renderer->try_bind_dmabuf_egl();
 	auto storage =
 		(RasterizerStorageGLES3 *)renderer->rasterizer->get_storage();
 	gles3_flush_errors(NULL);
@@ -204,13 +276,241 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 	return wlr_texture->get_wlr_texture();
 }
 
+int WlrGLES3Renderer::get_dmabuf_formats(
+		struct wlr_renderer *renderer, int **formats) {
+  	log_debug_dma("DEBUG: get_dmabuf_formats called\n");
+
+		// Get EGLDisplay
+    struct WlrGLES3Renderer::renderer_state *state =
+		(struct WlrGLES3Renderer::renderer_state *)renderer;
+    WlrGLES3Renderer *godot_renderer = state->godot_renderer;
+    godot_renderer->try_bind_dmabuf_egl();
+    EGLDisplay display = godot_renderer->egl_display;
+
+		if (display == EGL_NO_DISPLAY) {
+			log_debug_dma("DEBUG: get_dmabuf_formats: EGL display not ready\n");
+			return -1;
+		}
+
+		// Attempt to get supported formats (or else fall back to a conservative list if they're unavailable)
+    PFNEGLQUERYDMABUFFORMATSEXTPROC eglQueryDmaBufFormatsEXT = (PFNEGLQUERYDMABUFFORMATSEXTPROC)eglGetProcAddress("eglQueryDmaBufFormatsEXT");
+
+    if (!eglQueryDmaBufFormatsEXT) {
+        log_debug_dma("DEBUG: eglQueryDmaBufFormatsEXT not supported, using fallbacks\n");
+        static const int supported_formats[] = {
+            DRM_FORMAT_ARGB8888,
+            DRM_FORMAT_XRGB8888,
+            DRM_FORMAT_ABGR8888,
+            DRM_FORMAT_XBGR8888,
+        };
+        *formats = (int *)calloc(sizeof(supported_formats) / sizeof(supported_formats[0]), sizeof(int));
+        for (size_t i = 0; i < sizeof(supported_formats) / sizeof(supported_formats[0]); ++i) {
+            (*formats)[i] = supported_formats[i];
+        }
+        return sizeof(supported_formats) / sizeof(supported_formats[0]);
+    }
+
+    EGLint num;
+    if (!eglQueryDmaBufFormatsEXT(display, 0, NULL, &num)) {
+        return -1;
+    }
+
+    *formats = (int *)calloc(num, sizeof(int));
+    if (!eglQueryDmaBufFormatsEXT(display, num, *formats, &num)) {
+        free(*formats);
+        return -1;
+    }
+
+    return num;
+}
+
+// Probe EGL/our driver for supported modifiers (s.t. "modifier" is EGL speak for how pixels are laid out in memory)
+int WlrGLES3Renderer::get_dmabuf_modifiers(
+		struct wlr_renderer *renderer, int format, uint64_t **modifiers) {
+	log_debug_dma("DEBUG: get_dmabuf_modifiers called for format %d\n", format);
+
+	  //Get state
+    struct WlrGLES3Renderer::renderer_state *state =
+		(struct WlrGLES3Renderer::renderer_state *)renderer;
+    WlrGLES3Renderer *godot_renderer = state->godot_renderer;
+    godot_renderer->try_bind_dmabuf_egl();
+    EGLDisplay display = godot_renderer->egl_display;
+
+		if (display == EGL_NO_DISPLAY) {
+			log_debug_dma("DEBUG: get_dmabuf_modifiers: EGL display not ready\n");
+			return -1;
+		}
+
+		// Probe for modifiers (falling back to linear if querying isn't supported)
+    PFNEGLQUERYDMABUFMODIFIERSEXTPROC eglQueryDmaBufModifiersEXT = (PFNEGLQUERYDMABUFMODIFIERSEXTPROC)eglGetProcAddress("eglQueryDmaBufModifiersEXT");
+
+    if (!eglQueryDmaBufModifiersEXT) {
+        log_debug_dma("DEBUG: eglQueryDmaBufModifiersEXT not supported, using linear only\n");
+        *modifiers = (uint64_t *)calloc(1, sizeof(uint64_t));
+        (*modifiers)[0] = DRM_FORMAT_MOD_LINEAR;
+        return 1;
+    }
+
+    EGLint num;
+    if (!eglQueryDmaBufModifiersEXT(display, format, 0, NULL, NULL, &num)) {
+        return -1;
+    }
+
+    *modifiers = (uint64_t *)calloc(num, sizeof(uint64_t));
+    if (!eglQueryDmaBufModifiersEXT(display, format, num, *modifiers, NULL, &num)) {
+        free(*modifiers);
+        return -1;
+    }
+
+    return num;
+}
+
+struct wlr_texture *WlrGLES3Renderer::texture_from_dmabuf(
+		struct wlr_renderer *_renderer, struct wlr_dmabuf_attributes *attribs) {
+
+	log_debug_dma("DEBUG: texture_from_dmabuf called (fmt=%u %ux%u planes=%d)\n",
+		attribs->format, attribs->width, attribs->height, attribs->n_planes);
+
+	struct WlrGLES3Renderer::renderer_state *state =
+		(struct WlrGLES3Renderer::renderer_state *)_renderer;
+	WlrGLES3Renderer *renderer = state->godot_renderer;
+	renderer->try_bind_dmabuf_egl();
+	auto storage =
+		(RasterizerStorageGLES3 *)renderer->rasterizer->get_storage();
+	if (renderer->egl_display == EGL_NO_DISPLAY) {
+		log_debug_dma("DEBUG: texture_from_dmabuf: EGL display not ready\n");
+		return NULL;
+	}
+
+	//eglCreateImageKHR basically (i) labels the graphical data as shared and (ii) creates a handle which other things can use to access it
+	PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC)eglGetProcAddress("eglCreateImageKHR");
+	//glEGLImageTargetTexture2DOES is used to tell the OpenGL state machine that the shared image is the currently bound/active texture
+	PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+
+	if (!eglCreateImageKHR || !glEGLImageTargetTexture2DOES) {
+		wlr_log(WLR_ERROR, "Missing EGL/GL extensions for dmabuf");
+		return NULL;
+	}
+
+	EGLDisplay display = renderer->egl_display;
+	const char *exts = eglQueryString(display, EGL_EXTENSIONS);
+	bool has_modifiers_ext = egl_has_extension(exts, "EGL_EXT_image_dma_buf_import_modifiers");
+	bool has_modifier = false;
+	if (attribs->modifier != DRM_FORMAT_MOD_INVALID &&
+			attribs->modifier != DRM_FORMAT_MOD_LINEAR) {
+		if (!has_modifiers_ext) {
+			wlr_log(WLR_ERROR, "dmabuf modifiers extension not present");
+			return NULL;
+		}
+		has_modifier = true;
+	}
+
+	//attrib_list encodes the layout of the dma buffers which we feed to eglCreateImageKHR
+	EGLint attrib_list[50];
+	int i = 0;
+	attrib_list[i++] = EGL_WIDTH;
+	attrib_list[i++] = attribs->width;
+	attrib_list[i++] = EGL_HEIGHT;
+	attrib_list[i++] = attribs->height;
+	attrib_list[i++] = EGL_LINUX_DRM_FOURCC_EXT;
+	attrib_list[i++] = attribs->format;
+
+	//DMA buffers have 4 planes, each with this data conforming to this struct
+	struct {
+		int fd;
+		int offset_idx;
+		int pitch_idx;
+		int mod_lo;
+		int mod_hi;
+	} planes[] = {
+		{ EGL_DMA_BUF_PLANE0_FD_EXT, EGL_DMA_BUF_PLANE0_OFFSET_EXT, EGL_DMA_BUF_PLANE0_PITCH_EXT, EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT },
+		{ EGL_DMA_BUF_PLANE1_FD_EXT, EGL_DMA_BUF_PLANE1_OFFSET_EXT, EGL_DMA_BUF_PLANE1_PITCH_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT },
+		{ EGL_DMA_BUF_PLANE2_FD_EXT, EGL_DMA_BUF_PLANE2_OFFSET_EXT, EGL_DMA_BUF_PLANE2_PITCH_EXT, EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT },
+		{ EGL_DMA_BUF_PLANE3_FD_EXT, EGL_DMA_BUF_PLANE3_OFFSET_EXT, EGL_DMA_BUF_PLANE3_PITCH_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT },
+	};
+
+	for (int plane = 0; plane < attribs->n_planes; ++plane) {
+		attrib_list[i++] = planes[plane].fd;
+		attrib_list[i++] = attribs->fd[plane];
+		attrib_list[i++] = planes[plane].offset_idx;
+		attrib_list[i++] = attribs->offset[plane];
+		attrib_list[i++] = planes[plane].pitch_idx;
+		attrib_list[i++] = attribs->stride[plane];
+		if (has_modifier) {
+			attrib_list[i++] = planes[plane].mod_lo;
+			attrib_list[i++] = attribs->modifier & 0xFFFFFFFF;
+			attrib_list[i++] = planes[plane].mod_hi;
+			attrib_list[i++] = attribs->modifier >> 32;
+		}
+	}
+	attrib_list[i++] = EGL_NONE;
+
+	// Creates the shared EGL image handle of the dma buffer
+	EGLImageKHR image = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attrib_list);
+	if (image == EGL_NO_IMAGE_KHR) {
+		wlr_log(WLR_ERROR, "Failed to create EGLImage (err=0x%x, fmt=%u %ux%u planes=%d)",
+				eglGetError(), attribs->format, attribs->width, attribs->height, attribs->n_planes);
+		return NULL;
+	}
+
+	// Not sure if this managed right. Be weary of potential leaks
+	RID rid = storage->texture_create();
+	RasterizerStorageGLES3::Texture *texture =
+		storage->texture_owner.getornull(rid);
+
+	// Create an OpenGL texture object, make it active in the state machine, and have it point towards the dma buffer
+	GLuint tex_id;
+	glGenTextures(1, &tex_id);
+	glBindTexture(GL_TEXTURE_2D, tex_id);
+	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
+
+	// Make the texture have tehse paramaters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// Update state
+	texture->tex_id = tex_id;
+	texture->width = attribs->width;
+	texture->height = attribs->height;
+	texture->target = GL_TEXTURE_2D;
+	texture->active = true;
+
+	// We use dummy wl_shm_format data here since we're using dma buffers (which carry their own format meta-data)
+	static const struct gles3_pixel_format dummy_fmt = {
+		.wl_format = (wl_shm_format)attribs->format,
+		.gl_format = GL_RGBA,
+		.gl_type = GL_UNSIGNED_BYTE,
+		.depth = 24,
+		.bpp = 32,
+		.has_alpha = true,
+		.swizzle = false
+	};
+
+	// Return a new heap allocated texture; actually not super sure this gets cleaned up so be on lookout
+	WlrGLES3Texture *wlr_texture = new WlrGLES3Texture(storage, rid, attribs->width, attribs->height, &dummy_fmt);
+	wlr_texture->egl_image = image;
+	wlr_texture->egl_display = display;
+	wlr_texture->reference();
+	log_debug_dma("DEBUG: texture_from_dmabuf success\n");
+
+	return wlr_texture->get_wlr_texture();
+}
+
 static void generateMipmaps(RasterizerStorageGLES3::Texture* texture, int width, int height, int level) {
 	return;
 }
 
 static void renderer_init_wl_display(struct wlr_renderer *renderer,
 		struct wl_display *wl_display) {
-	// TODO: bind EGL
+	log_debug_dma("DEBUG: renderer_init_wl_display called (EGL current display)\n");
+
+	struct WlrGLES3Renderer::renderer_state *state =
+		(struct WlrGLES3Renderer::renderer_state *)renderer;
+	WlrGLES3Renderer *godot_renderer = state->godot_renderer;
+	godot_renderer->pending_wl_display = wl_display;
+	godot_renderer->try_bind_dmabuf_egl();
 }
 
 static void renderer_begin(struct wlr_renderer *renderer,
@@ -260,7 +560,10 @@ static const struct wlr_renderer_impl renderer_impl = {
 	/* We use these */
 	.formats = renderer_formats,
 	.format_supported = renderer_format_supported,
+	.get_dmabuf_formats = WlrGLES3Renderer::get_dmabuf_formats,
+	.get_dmabuf_modifiers = WlrGLES3Renderer::get_dmabuf_modifiers,
 	.texture_from_pixels = WlrGLES3Renderer::texture_from_pixels,
+	.texture_from_dmabuf = WlrGLES3Renderer::texture_from_dmabuf,
 	.init_wl_display = renderer_init_wl_display,
 };
 
@@ -271,10 +574,14 @@ struct wlr_renderer *WlrGLES3Renderer::get_wlr_renderer() {
 }
 
 WlrGLES3Renderer::WlrGLES3Renderer(RasterizerGLES3 *p_rasterizer) {
+	log_debug_dma("DEBUG: WlrGLES3Renderer constructor called\n");
 	rasterizer = p_rasterizer;
 	wlr_renderer_init(&renderer_state.wlr_renderer, &renderer_impl);
 	renderer_state.godot_renderer = this;
 	WlrRenderer::singleton = this;
+	egl_display = EGL_NO_DISPLAY;
+	pending_wl_display = NULL;
+	dmabuf_bound = false;
 }
 
 extern "C" {
@@ -292,6 +599,7 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 		uint32_t width, uint32_t height,
 		uint32_t src_x, uint32_t src_y, uint32_t dst_x, uint32_t dst_y,
 		const void *data) {
+	log_debug_dma("DEBUG: wlr_texture_write_pixels called (%dx%d)\n", width, height);
 	WlrGLES3Texture *gles3_texture = WlrGLES3Texture::texture_from_wlr(
 		_texture);
 	gles3_flush_errors(NULL);
@@ -355,6 +663,114 @@ WlrGLES3Renderer::~WlrGLES3Renderer() {
 	wlr_renderer_destroy(&renderer_state.wlr_renderer);
 }
 
+void WlrGLES3Renderer::try_bind_dmabuf_egl() {
+	if (dmabuf_bound || pending_wl_display == NULL) {
+		return;
+	}
+
+	// Attempt to get EGL display on current thread
+	EGLDisplay display = eglGetCurrentDisplay();
+
+	// If this fails, try a bunch of other ways to get an EGL display
+	if (display == EGL_NO_DISPLAY) {
+		void *native_display = OS::get_singleton()->get_native_handle(OS::DISPLAY_HANDLE);
+		log_debug_dma("DEBUG: eglGetCurrentDisplay = EGL_NO_DISPLAY; native_display=%p\n", native_display);
+
+		PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+				(PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+		if (!eglGetPlatformDisplayEXT) {
+			log_debug_dma("DEBUG: eglGetPlatformDisplayEXT not available\n");
+		} else if (native_display) {
+			bool tried_platform = false;
+// An LLM suggested we bifurcate on these extension guards, though honestly I don't have a good grip of whether we need them both.
+// Looks like our Godot EGL backend uses EGL_PLATFORM_X11_EXT, while wlroots uses EGL_PLATFORM_X11_KHR.
+#ifdef EGL_PLATFORM_X11_EXT
+			tried_platform = true;
+			eglGetError();
+			display = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT, native_display, nullptr);
+			if (display == EGL_NO_DISPLAY) {
+				EGLint err = eglGetError();
+				log_debug_dma("DEBUG: eglGetPlatformDisplayEXT(X11_EXT) failed (err=0x%x)\n", err);
+			}
+#endif
+#ifdef EGL_PLATFORM_X11_KHR
+			if (display == EGL_NO_DISPLAY) {
+				tried_platform = true;
+				eglGetError();
+				display = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_KHR, native_display, nullptr);
+				if (display == EGL_NO_DISPLAY) {
+					EGLint err = eglGetError();
+					log_debug_dma("DEBUG: eglGetPlatformDisplayEXT(X11_KHR) failed (err=0x%x)\n", err);
+				}
+			}
+#endif
+			if (!tried_platform) {
+				log_debug_dma("DEBUG: EGL_PLATFORM_X11_EXT/KHR not defined by EGL headers\n");
+			}
+			if (display != EGL_NO_DISPLAY) {
+				log_debug_dma("DEBUG: eglGetPlatformDisplayEXT returned display=%p\n", (void *)display);
+			}
+		}
+
+		if (display == EGL_NO_DISPLAY && native_display) {
+			eglGetError();
+			display = eglGetDisplay((EGLNativeDisplayType)native_display);
+			if (display == EGL_NO_DISPLAY) {
+				EGLint err = eglGetError();
+				log_debug_dma("DEBUG: eglGetDisplay(native) failed (err=0x%x)\n", err);
+			}
+		}
+		if (display == EGL_NO_DISPLAY) {
+			eglGetError();
+			display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+			if (display == EGL_NO_DISPLAY) {
+				EGLint err = eglGetError();
+				log_debug_dma("DEBUG: eglGetDisplay(default) failed (err=0x%x)\n", err);
+			}
+		}
+		if (display == EGL_NO_DISPLAY) {
+			log_debug_dma("DEBUG: eglGetDisplay failed; deferring dmabuf EGL bind\n");
+			return;
+		}
+	}
+
+	EGLint major, minor;
+	if (!eglInitialize(display, &major, &minor)) {
+		log_debug_dma("DEBUG: eglInitialize failed (0x%x) on display=%p\n", eglGetError(), (void *)display);
+		return;
+	}
+	log_debug_dma("DEBUG: EGL Initialized %d.%d (current display)\n", major, minor);
+
+	// Use GLES
+	EGLenum egl_api = EGL_OPENGL_ES_API;
+#ifdef GLES_OVER_GL
+	egl_api = EGL_OPENGL_API;
+#endif
+	if (!eglBindAPI(egl_api)) {
+		log_debug_dma("DEBUG: eglBindAPI failed (0x%x)\n", eglGetError());
+	}
+
+	egl_display = display;
+
+	// Get supported EGL extensions for a debug print
+	const char *exts = eglQueryString(display, EGL_EXTENSIONS);
+	log_debug_dma("DEBUG: EGL Extensions: %s\n", exts ? exts : "NULL");
+
+	// Bind EGL to Wayland display to support wl_drm/dmabuf.
+	PFNEGLBINDWAYLANDDISPLAYWL eglBindWaylandDisplayWL =
+		(PFNEGLBINDWAYLANDDISPLAYWL)eglGetProcAddress("eglBindWaylandDisplayWL");
+	if (eglBindWaylandDisplayWL) {
+		if (eglBindWaylandDisplayWL(display, pending_wl_display)) {
+			log_debug_dma("DEBUG: eglBindWaylandDisplayWL succeeded\n");
+			dmabuf_bound = true;
+		} else {
+			log_debug_dma("DEBUG: eglBindWaylandDisplayWL failed\n");
+		}
+	} else {
+		log_debug_dma("DEBUG: eglBindWaylandDisplayWL not supported by EGL implementation\n");
+	}
+}
+
 Texture *WlrGLES3Renderer::texture_from_wlr(struct wlr_texture *texture) {
 	return WlrGLES3Texture::texture_from_wlr(texture);
 }
@@ -362,6 +778,7 @@ Texture *WlrGLES3Renderer::texture_from_wlr(struct wlr_texture *texture) {
 WlrGLES3Texture::WlrGLES3Texture(RasterizerStorageGLES3 *p_storage,
 		RID p_texture, int width, int height,
 		const struct gles3_pixel_format *fmt) {
+	log_debug_dma("DEBUG: WlrGLES3Texture constructor called (%dx%d)\n", width, height);
 	wlr_texture_init(&state.wlr_texture, &texture_impl);
 	state.godot_texture = this;
 	storage = p_storage;
@@ -369,6 +786,17 @@ WlrGLES3Texture::WlrGLES3Texture(RasterizerStorageGLES3 *p_storage,
 	pixel_format = fmt;
 	w = width;
 	h = height;
+	egl_image = EGL_NO_IMAGE_KHR;
+	egl_display = EGL_NO_DISPLAY;
+}
+
+WlrGLES3Texture::~WlrGLES3Texture() {
+	if (egl_image != EGL_NO_IMAGE_KHR && egl_display != EGL_NO_DISPLAY) {
+		PFNEGLDESTROYIMAGEKHRPROC destroy_image = (PFNEGLDESTROYIMAGEKHRPROC)eglGetProcAddress("eglDestroyImageKHR");
+		if (destroy_image) {
+			destroy_image(egl_display, egl_image);
+		}
+	}
 }
 
 int WlrGLES3Texture::get_width() const {

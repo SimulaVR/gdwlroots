@@ -3,12 +3,17 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #include "scene/resources/texture.h"
 #include "renderer.h"
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
 extern "C" {
 #define static
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/wlr_texture.h>
 #undef static
 }
+
+struct wl_display;
 
 struct gles3_pixel_format {
 	enum wl_shm_format wl_format;
@@ -35,6 +40,11 @@ class WlrGLES3Texture : public Texture {
 	uint32_t flags;
 
 public:
+	EGLImageKHR egl_image;
+	EGLDisplay egl_display;
+	struct wl_display *pending_wl_display;
+	bool dmabuf_bound;
+
 	static WlrGLES3Texture *texture_from_wlr(struct wlr_texture *texture);
 
 	struct wlr_texture *get_wlr_texture();
@@ -57,11 +67,13 @@ public:
 	WlrGLES3Texture(RasterizerStorageGLES3 *storage,
 			RID texture, int width, int height,
 			const struct gles3_pixel_format *pixel_format);
+	~WlrGLES3Texture();
 };
 
 class WlrGLES3Renderer : public WlrRenderer {
 	RasterizerGLES3 *rasterizer;
 
+public:
 	/* Hack necessary for moving pointers between wlroots and godot */
 	struct renderer_state {
 		struct wlr_renderer wlr_renderer;
@@ -70,16 +82,27 @@ class WlrGLES3Renderer : public WlrRenderer {
 
 	struct renderer_state renderer_state;
 
-public:
+	EGLDisplay egl_display;
+	struct wl_display *pending_wl_display;
+	bool dmabuf_bound;
+
 	static struct wlr_texture *texture_from_pixels(
 			struct wlr_renderer *_renderer, enum wl_shm_format fmt,
 			uint32_t stride, uint32_t width, uint32_t height, const void *data);
+	static struct wlr_texture *texture_from_dmabuf(
+			struct wlr_renderer *renderer, struct wlr_dmabuf_attributes *attribs);
+	static int get_dmabuf_formats(
+			struct wlr_renderer *renderer, int **formats);
+	static int get_dmabuf_modifiers(
+			struct wlr_renderer *renderer, int format, uint64_t **modifiers);
 
 	virtual struct wlr_renderer *get_wlr_renderer();
 	virtual Texture *texture_from_wlr(struct wlr_texture *texture);
 
 	WlrGLES3Renderer(RasterizerGLES3 *rasterizer);
 	~WlrGLES3Renderer();
+
+	void try_bind_dmabuf_egl();
 };
 
 #endif

@@ -5,12 +5,19 @@
 #include "wlr_backend.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+
 extern "C" {
 #include <wlr/backend.h>
 #include <wlr/backend/interface.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/util/log.h>
+}
 
+void log_debug_dma(const char* fmt, ...);
+
+extern "C" {
 bool backend_start(struct wlr_backend *backend) {
 	/* This space deliberately left blank */
 	return false;
@@ -59,10 +66,22 @@ void WlrBackend::_notification(int p_what) {
 	WaylandDisplay *display = get_wayland_display();
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE:
+		log_debug_dma("DEBUG: WlrBackend entered tree, initializing wl_display\n");
 		if (display != initialized_display) {
 			wlr_renderer_init_wl_display(
 				get_renderer()->get_wlr_renderer(),
 				display->get_wayland_display());
+
+			// Advertise that we support dma buffers
+			linux_dmabuf = wlr_linux_dmabuf_v1_create(
+				display->get_wayland_display(),
+				get_renderer()->get_wlr_renderer());
+			if (linux_dmabuf) {
+				log_debug_dma("DEBUG: wlr_linux_dmabuf_v1 protocol global created successfully\n");
+			} else {
+				log_debug_dma("DEBUG: Failed to create wlr_linux_dmabuf_v1 protocol global\n");
+			}
+
 			initialized_display = display;
 		}
 		break;
@@ -71,6 +90,8 @@ void WlrBackend::_notification(int p_what) {
 
 WlrBackend::WlrBackend() {
 	wlr_log_init(WLR_ERROR, NULL);
+	initialized_display = NULL;
+	linux_dmabuf = NULL;
 	auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer);
 	if (auto gles3_rasterizer = dynamic_cast<RasterizerGLES3 *>(VSG::rasterizer)) {
 		renderer = new WlrGLES3Renderer(gles3_rasterizer);
@@ -82,5 +103,9 @@ WlrBackend::WlrBackend() {
 }
 
 WlrBackend::~WlrBackend() {
+	if (linux_dmabuf) {
+		wlr_linux_dmabuf_v1_destroy(linux_dmabuf);
+		linux_dmabuf = NULL;
+	}
 	wlr_backend_destroy(&backend);
 }

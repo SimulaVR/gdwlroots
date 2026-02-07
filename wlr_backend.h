@@ -5,6 +5,7 @@
 #include "renderer.h"
 extern "C" {
 #include <wlr/backend.h>
+#include <wlr/types/wlr_linux_dmabuf_v1.h>
 }
 
 class WlrBackend : public Node {
@@ -15,6 +16,7 @@ class WlrBackend : public Node {
 	WlrRenderer *renderer;
 	WaylandDisplay *get_wayland_display();
 	WaylandDisplay *initialized_display;
+	struct wlr_linux_dmabuf_v1 *linux_dmabuf;
 
 protected:
 	static void _bind_methods();
