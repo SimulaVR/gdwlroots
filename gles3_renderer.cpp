@@ -648,7 +648,13 @@ bool WlrGLES3Texture::wlr_texture_write_pixels(
 void WlrGLES3Texture::wlr_texture_destroy(struct wlr_texture *_texture) {
 	WlrGLES3Texture *texture = WlrGLES3Texture::texture_from_wlr(
 		_texture);
-	texture->unreference();
+	if (texture == NULL) {
+		return;
+	}
+	texture->release_render_resources();
+	if (texture->unreference()) {
+		memdelete(texture);
+	}
 }
 
 static const struct wlr_texture_impl texture_impl = {
@@ -786,17 +792,39 @@ WlrGLES3Texture::WlrGLES3Texture(RasterizerStorageGLES3 *p_storage,
 	pixel_format = fmt;
 	w = width;
 	h = height;
+	resources_released = false;
 	egl_image = EGL_NO_IMAGE_KHR;
 	egl_display = EGL_NO_DISPLAY;
 }
 
-WlrGLES3Texture::~WlrGLES3Texture() {
+void WlrGLES3Texture::release_render_resources() {
+	if (resources_released) {
+		return;
+	}
+	resources_released = true;
+
 	if (egl_image != EGL_NO_IMAGE_KHR && egl_display != EGL_NO_DISPLAY) {
 		PFNEGLDESTROYIMAGEKHRPROC destroy_image = (PFNEGLDESTROYIMAGEKHRPROC)eglGetProcAddress("eglDestroyImageKHR");
 		if (destroy_image) {
 			destroy_image(egl_display, egl_image);
 		}
+		egl_image = EGL_NO_IMAGE_KHR;
+		egl_display = EGL_NO_DISPLAY;
 	}
+
+	if (texture.is_valid()) {
+		VS *vs = VS::get_singleton();
+		if (vs != nullptr) {
+			vs->free(texture);
+		} else if (storage != nullptr) {
+			storage->free(texture);
+		}
+		texture = RID();
+	}
+}
+
+WlrGLES3Texture::~WlrGLES3Texture() {
+	release_render_resources();
 }
 
 int WlrGLES3Texture::get_width() const {

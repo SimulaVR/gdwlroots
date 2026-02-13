@@ -38,6 +38,9 @@ class WlrGLES3Texture : public Texture {
 	RID texture;
 	int w, h;
 	uint32_t flags;
+	bool resources_released;
+
+	void release_render_resources();
 
 public:
 	EGLImageKHR egl_image;
