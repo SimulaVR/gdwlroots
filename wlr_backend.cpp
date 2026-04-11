@@ -72,14 +72,19 @@ void WlrBackend::_notification(int p_what) {
 				get_renderer()->get_wlr_renderer(),
 				display->get_wayland_display());
 
-			// Advertise that we support dma buffers
-			linux_dmabuf = wlr_linux_dmabuf_v1_create(
-				display->get_wayland_display(),
-				get_renderer()->get_wlr_renderer());
-			if (linux_dmabuf) {
-				log_debug_dma("DEBUG: wlr_linux_dmabuf_v1 protocol global created successfully\n");
+			if (auto *gles3_renderer = dynamic_cast<WlrGLES3Renderer *>(get_renderer());
+					gles3_renderer && gles3_renderer->is_dmabuf_available()) {
+				// Only advertise linux-dmabuf when the EGL Wayland bind succeeded.
+				linux_dmabuf = wlr_linux_dmabuf_v1_create(
+					display->get_wayland_display(),
+					get_renderer()->get_wlr_renderer());
+				if (linux_dmabuf) {
+					log_debug_dma("DEBUG: wlr_linux_dmabuf_v1 protocol global created successfully\n");
+				} else {
+					log_debug_dma("DEBUG: Failed to create wlr_linux_dmabuf_v1 protocol global\n");
+				}
 			} else {
-				log_debug_dma("DEBUG: Failed to create wlr_linux_dmabuf_v1 protocol global\n");
+				log_debug_dma("DEBUG: Skipping wlr_linux_dmabuf_v1 protocol global; dmabuf EGL binding unavailable\n");
 			}
 
 			initialized_display = display;

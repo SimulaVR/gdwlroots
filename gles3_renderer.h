@@ -45,8 +45,6 @@ class WlrGLES3Texture : public Texture {
 public:
 	EGLImageKHR egl_image;
 	EGLDisplay egl_display;
-	struct wl_display *pending_wl_display;
-	bool dmabuf_bound;
 
 	static WlrGLES3Texture *texture_from_wlr(struct wlr_texture *texture);
 
@@ -88,6 +86,7 @@ public:
 	EGLDisplay egl_display;
 	struct wl_display *pending_wl_display;
 	bool dmabuf_bound;
+	bool dmabuf_disabled;
 
 	static struct wlr_texture *texture_from_pixels(
 			struct wlr_renderer *_renderer, enum wl_shm_format fmt,
@@ -105,6 +104,7 @@ public:
 	WlrGLES3Renderer(RasterizerGLES3 *rasterizer);
 	~WlrGLES3Renderer();
 
+	bool is_dmabuf_available() const;
 	void try_bind_dmabuf_egl();
 };
 

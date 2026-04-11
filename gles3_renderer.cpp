@@ -582,6 +582,7 @@ WlrGLES3Renderer::WlrGLES3Renderer(RasterizerGLES3 *p_rasterizer) {
 	egl_display = EGL_NO_DISPLAY;
 	pending_wl_display = NULL;
 	dmabuf_bound = false;
+	dmabuf_disabled = false;
 }
 
 extern "C" {
@@ -670,7 +671,7 @@ WlrGLES3Renderer::~WlrGLES3Renderer() {
 }
 
 void WlrGLES3Renderer::try_bind_dmabuf_egl() {
-	if (dmabuf_bound || pending_wl_display == NULL) {
+	if (dmabuf_bound || dmabuf_disabled || pending_wl_display == NULL) {
 		return;
 	}
 
@@ -762,6 +763,13 @@ void WlrGLES3Renderer::try_bind_dmabuf_egl() {
 	const char *exts = eglQueryString(display, EGL_EXTENSIONS);
 	log_debug_dma("DEBUG: EGL Extensions: %s\n", exts ? exts : "NULL");
 
+	if (!egl_has_extension(exts, "EGL_WL_bind_wayland_display")) {
+		log_debug_dma("DEBUG: EGL_WL_bind_wayland_display not advertised; disabling dmabuf support\n");
+		egl_display = EGL_NO_DISPLAY;
+		dmabuf_disabled = true;
+		return;
+	}
+
 	// Bind EGL to Wayland display to support wl_drm/dmabuf.
 	PFNEGLBINDWAYLANDDISPLAYWL eglBindWaylandDisplayWL =
 		(PFNEGLBINDWAYLANDDISPLAYWL)eglGetProcAddress("eglBindWaylandDisplayWL");
@@ -770,15 +778,23 @@ void WlrGLES3Renderer::try_bind_dmabuf_egl() {
 			log_debug_dma("DEBUG: eglBindWaylandDisplayWL succeeded\n");
 			dmabuf_bound = true;
 		} else {
-			log_debug_dma("DEBUG: eglBindWaylandDisplayWL failed\n");
+			log_debug_dma("DEBUG: eglBindWaylandDisplayWL failed; disabling dmabuf support\n");
+			egl_display = EGL_NO_DISPLAY;
+			dmabuf_disabled = true;
 		}
 	} else {
-		log_debug_dma("DEBUG: eglBindWaylandDisplayWL not supported by EGL implementation\n");
+		log_debug_dma("DEBUG: eglBindWaylandDisplayWL symbol unavailable; disabling dmabuf support\n");
+		egl_display = EGL_NO_DISPLAY;
+		dmabuf_disabled = true;
 	}
 }
 
 Texture *WlrGLES3Renderer::texture_from_wlr(struct wlr_texture *texture) {
 	return WlrGLES3Texture::texture_from_wlr(texture);
+}
+
+bool WlrGLES3Renderer::is_dmabuf_available() const {
+	return dmabuf_bound && !dmabuf_disabled && egl_display != EGL_NO_DISPLAY;
 }
 
 WlrGLES3Texture::WlrGLES3Texture(RasterizerStorageGLES3 *p_storage,
