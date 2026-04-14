@@ -271,7 +271,7 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 
 	generateMipmaps(texture, width, height, 0);
 
-	WlrGLES3Texture *wlr_texture = new WlrGLES3Texture(storage, rid, width, height, fmt);
+	WlrGLES3Texture *wlr_texture = memnew(WlrGLES3Texture(storage, rid, width, height, fmt));
 	wlr_texture->reference();
 	return wlr_texture->get_wlr_texture();
 }
@@ -489,7 +489,7 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_dmabuf(
 	};
 
 	// Return a new heap allocated texture; actually not super sure this gets cleaned up so be on lookout
-	WlrGLES3Texture *wlr_texture = new WlrGLES3Texture(storage, rid, attribs->width, attribs->height, &dummy_fmt);
+	WlrGLES3Texture *wlr_texture = memnew(WlrGLES3Texture(storage, rid, attribs->width, attribs->height, &dummy_fmt));
 	wlr_texture->egl_image = image;
 	wlr_texture->egl_display = display;
 	wlr_texture->reference();

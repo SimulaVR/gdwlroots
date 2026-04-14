@@ -183,7 +183,7 @@ WlrSurfaceAtResult *WlrXdgSurface::surface_at(double sx, double sy) {
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_xdg_surface_surface_at(wlr_xdg_surface, sx, sy, &sub_x, &sub_y);
 	//struct wlr_surface *result = wlr_surface_surface_at(wlr_xdg_surface->surface, sx, sy, &sub_x, &sub_y);
-	return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
+	return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
 }
 
 
@@ -264,7 +264,13 @@ void WlrXdgSurface::handle_destroy(
 	}
 
 	xdg_surface->emit_signal("destroy", xdg_surface);
+	if (xdg_surface->wlr_xdg_surface) {
+		xdg_surface->wlr_xdg_surface->data = NULL;
+	}
 	xdg_surface->wlr_xdg_surface = NULL; //wlr_xdg_surface will no longer be valid after this
+	if (xdg_surface->unreference()) {
+		memdelete(xdg_surface);
+	}
 }
 
 void WlrXdgSurface::handle_map(
@@ -316,6 +322,7 @@ WlrXdgSurface::WlrXdgSurface() {
 WlrXdgSurface::WlrXdgSurface(struct wlr_xdg_surface *xdg_surface) {
 	wlr_xdg_surface = xdg_surface;
 	xdg_surface->data = this;
+	reference();
 	destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_surface->events.destroy, &destroy);
 	new_popup.notify = handle_new_popup;
@@ -353,7 +360,7 @@ WlrXdgSurface *WlrXdgSurface::from_wlr_xdg_surface(
 	} else if (xdg_surface->data) {
 		return (WlrXdgSurface *)xdg_surface->data;
 	}
-	return new WlrXdgSurface(xdg_surface);
+	return memnew(WlrXdgSurface(xdg_surface));
 }
 
 extern "C" {

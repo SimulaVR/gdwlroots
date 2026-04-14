@@ -130,25 +130,25 @@ WlrSurfaceState *WlrSurface::alloc_current_state() const {
   if (!wlr_surface) {
     return NULL;
   }
-	return new WlrSurfaceState(&wlr_surface->current);
+	return memnew(WlrSurfaceState(&wlr_surface->current));
 }
 
 WlrSurfaceState *WlrSurface::alloc_pending_state() const {
   if (!wlr_surface) {
     return NULL;
   }
-	return new WlrSurfaceState(&wlr_surface->pending);
+	return memnew(WlrSurfaceState(&wlr_surface->pending));
 }
 
 WlrSurfaceState *WlrSurface::alloc_previous_state() const {
   if (!wlr_surface) {
     return NULL;
   }
-	return new WlrSurfaceState(&wlr_surface->previous);
+	return memnew(WlrSurfaceState(&wlr_surface->previous));
 }
 
 void WlrSurfaceState::delete_state() {
-  delete this;
+  memdelete(this);
 }
 
 Array WlrSurface::get_damage_regions() const {
@@ -435,7 +435,11 @@ void WlrSurface::handle_destroy(
   struct wlr_surface * surface = (struct wlr_surface *)data;
 	WlrSurface * wlrSurface = WlrSurface::from_wlr_surface(surface);
 	wlrSurface->emit_signal("destroy", wlrSurface);
+	surface->data = NULL;
 	wlrSurface->wlr_surface = NULL; //wlr_surface will no longer be valid after this
+	if (wlrSurface->unreference()) {
+		memdelete(wlrSurface);
+	}
 }
 
 
@@ -453,7 +457,7 @@ WlrSurfaceAtResult *WlrSurface::surface_at(double sx, double sy) {
 	}
 	double sub_x, sub_y;
 	struct wlr_surface *result = wlr_surface_surface_at(wlr_surface, sx, sy, &sub_x, &sub_y);
-	return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
+	return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
 }
 
 void WlrSurface::surface_send_leave(Object * _output) {
@@ -535,6 +539,7 @@ WlrSurface::WlrSurface(struct wlr_surface *surface) {
 	// TODO: Handle surface destroyed
 	wlr_surface = surface;
 	surface->data = this;
+	reference();
 
 	new_subsurface.notify = handle_new_subsurface;
 	wl_signal_add(&wlr_surface->events.new_subsurface,
@@ -558,7 +563,7 @@ WlrSurface *WlrSurface::from_wlr_surface(struct wlr_surface *surface) {
 		auto s = (WlrSurface *)surface->data;
 		return s;
 	}
-	return new WlrSurface(surface);
+	return memnew(WlrSurface(surface));
 }
 
 
@@ -567,7 +572,11 @@ void WlrSubsurface::handle_destroy(struct wl_listener *listener, void *data) {
   struct wlr_subsurface * subsurface = (struct wlr_subsurface *)data;
 	WlrSubsurface * wlrSubsurface = WlrSubsurface::from_wlr_subsurface(subsurface);
 	wlrSubsurface->emit_signal("destroy", wlrSubsurface);
+	subsurface->data = NULL;
 	wlrSubsurface->wlr_subsurface = NULL; //wlr_subsurface will no longer be valid after this
+	if (wlrSubsurface->unreference()) {
+		memdelete(wlrSubsurface);
+	}
 }
 
 
@@ -586,6 +595,7 @@ WlrSubsurface::WlrSubsurface() {
 WlrSubsurface::WlrSubsurface(struct wlr_subsurface *subsurface) {
 	wlr_subsurface = subsurface;
 	subsurface->data = this;
+	reference();
 
 
 	destroy.notify = handle_destroy;
@@ -602,7 +612,7 @@ WlrSubsurface *WlrSubsurface::from_wlr_subsurface(struct wlr_subsurface *subsurf
 		auto s = (WlrSubsurface *)subsurface->data;
 		return s;
 	}
-	return new WlrSubsurface(subsurface);
+	return memnew(WlrSubsurface(subsurface));
 }
 
 struct wlr_subsurface *WlrSubsurface::get_wlr_subsurface() const {
@@ -645,7 +655,7 @@ WlrSurface *WlrSubsurface::from_wlr_surface(struct wlr_surface *surface) {
 		auto s = (WlrSurface *)surface->data;
 		return s;
 	}
-	return new WlrSurface(surface);
+	return memnew(WlrSurface(surface));
 }
 
 WlrSurface *WlrSubsurface::getWlrSurface() {

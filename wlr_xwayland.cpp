@@ -210,7 +210,7 @@ WlrSurfaceAtResult *WlrXWaylandSurface::surface_at(double sx, double sy) {
   double sub_x, sub_y;
   struct wlr_surface *result = wlr_surface_surface_at_spillover(wlr_xwayland_surface->surface, sx, sy, &sub_x, &sub_y);
 
-  return new WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y);
+  return memnew(WlrSurfaceAtResult(WlrSurface::from_wlr_surface(result), sub_x, sub_y));
 }
 
 
@@ -227,11 +227,19 @@ void WlrXWaylandSurface::handle_destroy(
   wl_list_remove(&xwayland_surface->request_move.link);
   wl_list_remove(&xwayland_surface->request_resize.link);
   wl_list_remove(&xwayland_surface->request_maximize.link);
+  wl_list_remove(&xwayland_surface->request_fullscreen.link);
+  wl_list_remove(&xwayland_surface->set_parent.link);
   wl_list_remove(&xwayland_surface->map.link);
   wl_list_remove(&xwayland_surface->unmap.link);
 
   xwayland_surface->emit_signal("destroy", xwayland_surface);
+  if (xwayland_surface->wlr_xwayland_surface) {
+    xwayland_surface->wlr_xwayland_surface->data = NULL;
+  }
 	xwayland_surface->wlr_xwayland_surface = NULL; //wlr_xwayland_surface will no longer be valid after this
+  if (xwayland_surface->unreference()) {
+    memdelete(xwayland_surface);
+  }
 }
 
 void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
@@ -327,7 +335,7 @@ WlrXWaylandSurface *WlrXWaylandSurface::from_wlr_xwayland_surface(
 	} else if (xwayland_surface->data) {
     return (WlrXWaylandSurface *)xwayland_surface->data;
   }
-  return new WlrXWaylandSurface(xwayland_surface);
+  return memnew(WlrXWaylandSurface(xwayland_surface));
 }
 
 extern "C" {
@@ -386,6 +394,7 @@ WlrXWaylandSurface::WlrXWaylandSurface() {
 WlrXWaylandSurface::WlrXWaylandSurface(struct wlr_xwayland_surface *xwayland_surface) {
   wlr_xwayland_surface = xwayland_surface;
   xwayland_surface->data = this;
+  reference();
 
   wlr_xwayland_surface_ping(xwayland_surface);
   destroy.notify = handle_destroy;

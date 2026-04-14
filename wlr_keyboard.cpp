@@ -48,7 +48,7 @@ void WlrKeyboard::handle_key(struct wl_listener *listener, void *data) {
 	WlrKeyboard *keyboard = wl_container_of(listener, keyboard, key);
 	struct wlr_event_keyboard_key *event =
 		(struct wlr_event_keyboard_key *)data;
-	auto gdevent = new WlrEventKeyboardKey(event);
+	auto gdevent = memnew(WlrEventKeyboardKey(event));
 	keyboard->emit_signal("key", keyboard, gdevent);
 }
 
