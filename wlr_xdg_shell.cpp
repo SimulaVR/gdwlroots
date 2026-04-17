@@ -110,7 +110,7 @@ Array WlrXdgSurface::get_children() {
 			WlrXdgSurface * xDGS;
 			xDGS = (WlrXdgSurface *)xdgp->base->data;    //Only return children for whome we have WlrXdgSurface formed already
 			Variant _xDGS = Variant( (Object *) xDGS );
-			children.push_front(_xDGS);
+			children.push_back(_xDGS);
 		}
   }
 

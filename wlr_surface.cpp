@@ -410,7 +410,7 @@ Array WlrSurface::get_children() {
     WlrSubsurface * wS;
     wS = (WlrSubsurface *)subsurface->data; //Only return children for whom we have WlrSubsurface's formed already
     Variant _wS = Variant( (Object *) wS );
-    children.push_front(_wS);
+    children.push_back(_wS);
 
     }
 

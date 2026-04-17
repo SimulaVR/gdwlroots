@@ -587,7 +587,7 @@ Array WlrXWaylandSurface::get_children() {
       WlrXWaylandSurface * xWS;
       xWS = (WlrXWaylandSurface *)xws->data; //Only return children for whom we have WlrXWaylandSurface's formed already
       Variant _xWS = Variant( (Object *) xWS );
-      children.push_front(_xWS);
+      children.push_back(_xWS);
     }
   }
 
