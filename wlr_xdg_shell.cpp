@@ -228,7 +228,7 @@ void WlrXdgSurface::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("destroy", PropertyInfo(Variant::OBJECT,
 			"xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 	ADD_SIGNAL(MethodInfo("ping_timeout", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
-	ADD_SIGNAL(MethodInfo("new_popup", PropertyInfo(Variant::OBJECT, "xdg_popup", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgPopup")));
+	ADD_SIGNAL(MethodInfo("new_popup", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 	ADD_SIGNAL(MethodInfo("map", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 	ADD_SIGNAL(MethodInfo("unmap", PropertyInfo(Variant::OBJECT, "xdg_surface", PROPERTY_HINT_RESOURCE_TYPE, "WlrXdgSurface")));
 	ADD_SIGNAL(MethodInfo("configure",
@@ -302,8 +302,10 @@ void WlrXdgSurface::handle_ping_timeout(struct wl_listener *listener, void *data
 
 void WlrXdgSurface::handle_new_popup(struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, new_popup);
-	 //std::cout << "WlrXdgSurface::handle_new_popup called w/xdg_surface: " << xdg_surface << " and popup: " << xdg_surface->popup << std::endl;
-	xdg_surface->emit_signal("new_popup", xdg_surface);
+	struct wlr_xdg_popup *xdg_popup = (struct wlr_xdg_popup *)data;
+	WlrXdgSurface *popup_surface =
+		WlrXdgSurface::from_wlr_xdg_surface(xdg_popup->base);
+	xdg_surface->emit_signal("new_popup", popup_surface);
 }
 
 void WlrXdgSurface::handle_unmap(
