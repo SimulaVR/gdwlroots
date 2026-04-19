@@ -262,8 +262,8 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
 
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, fmt->gl_type, data);
+//GL_SRGB8_ALPHA8
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, fmt->gl_type, data);
 	gles3_flush_errors("glTexImage2D");
 
 
