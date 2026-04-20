@@ -159,6 +159,27 @@ const struct gles3_pixel_format *get_gles3_format_from_wl(
 	return NULL;
 }
 
+static void configure_imported_texture_as_raw_rgba(
+		RasterizerStorageGLES3::Texture *texture,
+		int width, int height, GLenum gl_type) {
+	texture->width = width;
+	texture->height = height;
+	texture->alloc_width = width;
+	texture->alloc_height = height;
+	texture->depth = 0;
+	texture->alloc_depth = 0;
+	texture->format = Image::FORMAT_RGBA8;
+	texture->type = VS::TEXTURE_TYPE_2D;
+	texture->target = GL_TEXTURE_2D;
+	texture->gl_format_cache = GL_RGBA;
+	texture->gl_internal_format_cache = GL_RGBA8;
+	texture->gl_type_cache = gl_type;
+	texture->compressed = false;
+	texture->srgb = false;
+	texture->using_srgb = false;
+	texture->active = true;
+}
+
 static const enum wl_shm_format *renderer_formats(
 		struct wlr_renderer *renderer, size_t *len) {
 	log_debug_dma("DEBUG: renderer_formats called\n");
@@ -232,13 +253,14 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 			Image::FORMAT_RGBA8, VS::TEXTURE_TYPE_2D, 0);
 	gles3_flush_errors("texture_allocate");
 
-  texture->data_size = width * height * 4; //for savePng
-
 	const struct gles3_pixel_format *fmt = get_gles3_format_from_wl(wl_fmt);
 	if (fmt == NULL) {
 		wlr_log(WLR_ERROR, "Unsupported pixel format %" PRIu32, wl_fmt);
 		return NULL;
 	}
+
+	configure_imported_texture_as_raw_rgba(texture, width, height, fmt->gl_type);
+	texture->data_size = width * height * 4; //for savePng
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
@@ -261,8 +283,6 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_pixels(
 	}
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / (fmt->bpp / 8));
-
-//GL_SRGB8_ALPHA8
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, fmt->gl_type, data);
 	gles3_flush_errors("glTexImage2D");
 
@@ -470,12 +490,11 @@ struct wlr_texture *WlrGLES3Renderer::texture_from_dmabuf(
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	// Update state
+	// Treat imported client buffers as raw RGBA bytes and decode once in the
+	// final quad shader instead of relying on Godot's sRGB texture metadata.
 	texture->tex_id = tex_id;
-	texture->width = attribs->width;
-	texture->height = attribs->height;
-	texture->target = GL_TEXTURE_2D;
-	texture->active = true;
+	configure_imported_texture_as_raw_rgba(
+			texture, attribs->width, attribs->height, GL_UNSIGNED_BYTE);
 
 	// We use dummy wl_shm_format data here since we're using dma buffers (which carry their own format meta-data)
 	static const struct gles3_pixel_format dummy_fmt = {
