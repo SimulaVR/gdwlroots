@@ -4,6 +4,8 @@
 #include "wlr_output.h"
 #include "debug.h"
 #include <iostream>
+#include <stdlib.h>
+
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_surface.h>
@@ -13,6 +15,52 @@ extern "C" {
 #include <wlr/types/wlr_xdg_shell.h>
 //We override xwayland.h to avoid the `class` keyword
 #include "xwayland.h" //as opposed to: <wlr/xwayland.h>
+}
+
+static void log_wlr_surface_event(const char *prefix, struct wlr_surface *surface) {
+	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
+	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
+
+       if (!surface) {		std::cout << prefix << " surface=null" << std::endl;
+		return;
+	}
+
+	std::cout
+		<< prefix
+		<< " surface=" << surface
+		<< " size=" << surface->current.width << "x" << surface->current.height
+		<< " buffer=" << surface->current.buffer_width << "x" << surface->current.buffer_height
+		<< std::endl;
+}
+
+static void log_wlr_subsurface_event(const char *prefix, struct wlr_subsurface *subsurface) {
+	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
+	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
+
+       if (!subsurface) {		std::cout << prefix << " subsurface=null" << std::endl;
+		return;
+	}
+
+	std::cout
+		<< prefix
+		<< " subsurface=" << subsurface
+		<< " offset=(" << subsurface->current.x << "," << subsurface->current.y << ")";
+
+	if (subsurface->surface) {
+		std::cout
+			<< " child_surface=" << subsurface->surface
+			<< " child_buffer=" << subsurface->surface->current.buffer_width
+			<< "x" << subsurface->surface->current.buffer_height;
+	}
+
+	if (subsurface->parent) {
+		std::cout
+			<< " parent_surface=" << subsurface->parent
+			<< " parent_buffer=" << subsurface->parent->current.buffer_width
+			<< "x" << subsurface->parent->current.buffer_height;
+	}
+
+	std::cout << std::endl;
 }
 
 WlrSurface *WlrSurfaceAtResult::get_surface() {
@@ -418,11 +466,8 @@ Array WlrSurface::get_children() {
 }
 
 void WlrSurface::handle_new_subsurface(struct wl_listener *listener, void *data) {
-	//std::cout << "WlrSurface::handle_new_subsurface" << std::endl;
   struct wlr_subsurface * subsurface = (struct wlr_subsurface *)data;
-	// std::cout << "WlrSurface::handle_new_subsurface wlr_subsurface: " << subsurface << std::endl;
-	// std::cout << "WlrSurface::handle_new_subsurface wlr_subsurface->surface: " << subsurface->surface << std::endl;
-	// std::cout << "WlrSurface::handle_new_subsurface wlr_subsurface->parent: " << (subsurface->parent) << std::endl;
+	log_wlr_subsurface_event("WlrSurface::handle_new_subsurface", subsurface);
 
   auto wlrSubsurface = WlrSubsurface::from_wlr_subsurface((struct wlr_subsurface *)data);
   auto wlrSurface = WlrSurface::from_wlr_surface(subsurface->parent);

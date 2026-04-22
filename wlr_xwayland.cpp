@@ -9,9 +9,10 @@
 #include "wlr_output.h"
 #include "wlr_seat.h"
 #include "debug.h"
-
 #include <unistd.h>
 #include <iostream>
+#include <stdlib.h>
+
 
 extern "C" {
 #include <time.h>
@@ -28,6 +29,60 @@ extern "C" {
 #include "xwayland.h" //as opposed to: <wlr/xwayland.h>
 #include <xwayland/xwm.h>
 
+}
+
+static const char *xwayland_route_name(bool is_splash_surface,
+																			 bool is_normal_surface,
+																			 bool is_menu_surface,
+																			 struct wlr_xwayland_surface *surface) {
+	if (!surface) {
+		return "null";
+	} else if (is_splash_surface) {
+		return "map";
+	} else if (surface->parent == NULL && is_normal_surface) {
+		return "map";
+	} else if (surface->parent == NULL && is_menu_surface) {
+		return "map_free_child";
+	} else if (surface->parent == NULL && !is_normal_surface && !is_menu_surface) {
+		return "map";
+	} else if (surface->parent != NULL && !is_normal_surface) {
+		return "map_child";
+	} else if (surface->window_type == NULL) {
+		return "map";
+	}
+	return "map_free_child";
+}
+
+static void log_xwayland_surface_event(const char *prefix,
+                                                    struct wlr_xwayland_surface *surface,
+                                                    const char *route = NULL) {
+	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
+	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
+
+       if (!surface) {		std::cout << prefix << " xwayland_surface=null" << std::endl;
+		return;
+	}
+
+	std::cout
+		<< prefix
+		<< " xwayland_surface=" << surface
+		<< " parent=" << surface->parent
+		<< " pid=" << surface->pid
+		<< " geometry=(" << surface->x << "," << surface->y
+		<< " " << surface->width << "x" << surface->height << ")";
+
+	if (surface->surface) {
+		std::cout
+			<< " surface=" << surface->surface
+			<< " buffer=" << surface->surface->current.buffer_width
+			<< "x" << surface->surface->current.buffer_height;
+	}
+
+	if (route != NULL) {
+		std::cout << " route=" << route;
+	}
+
+	std::cout << std::endl;
 }
 
 bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
@@ -75,7 +130,8 @@ void WlrXWaylandSurface::handle_request_configure(struct wl_listener *listener, 
 
 void WlrXWayland::handle_new_xwayland_surface(
 		struct wl_listener *listener, void *data) {
-	//std::cout << "WlrXWayland::handle_new_xwayland_surface(..)" << std::endl;
+	log_xwayland_surface_event("WlrXWayland::handle_new_xwayland_surface",
+		(struct wlr_xwayland_surface *)data);
   WlrXWayland *xwayland = wl_container_of(
 			listener, xwayland, new_xwayland_surface);
 	auto surface = WlrXWaylandSurface::from_wlr_xwayland_surface((struct wlr_xwayland_surface *)data);
@@ -243,7 +299,6 @@ void WlrXWaylandSurface::handle_destroy(
 }
 
 void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
-	  //std::cout << "WlrXWaylandSurface::handle_map(..)" << std::endl;
 		WlrXWaylandSurface *xwayland_surface = wl_container_of(
 																													 listener, xwayland_surface, map);
 
@@ -261,6 +316,14 @@ void WlrXWaylandSurface::handle_map(struct wl_listener *listener, void *data) {
 																								xwayland_surface->wlr_xwayland_surface->window_type,
 																								1,
 																								NET_WM_WINDOW_TYPE_MENU);
+
+		log_xwayland_surface_event(
+			"WlrXWaylandSurface::handle_map",
+			xwayland_surface->wlr_xwayland_surface,
+			xwayland_route_name(is_splash_surface,
+												 is_normal_surface,
+												 is_menu_surface,
+												 xwayland_surface->wlr_xwayland_surface));
 
     // auto wType = xwm_get_atom_name(xwayland_surface->wlr_xwayland_surface->xwm, *xwayland_surface->wlr_xwayland_surface->window_type);
 	  // std::cout << "WINDOW TYPE: " << wType << std::endl;

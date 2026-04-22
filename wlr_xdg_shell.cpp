@@ -7,14 +7,55 @@
 #include "wlr_xdg_shell.h"
 #include "debug.h"
 #include <iostream>
+#include <stdlib.h>
+
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_xdg_shell.h>
+
+static const char *xdg_role_name(enum wlr_xdg_surface_role role) {
+	switch (role) {
+	case WLR_XDG_SURFACE_ROLE_NONE:
+		return "none";
+	case WLR_XDG_SURFACE_ROLE_TOPLEVEL:
+		return "toplevel";
+	case WLR_XDG_SURFACE_ROLE_POPUP:
+		return "popup";
+	default:
+		return "unknown";
+	}
+}
+
+static void log_xdg_surface_event(const char *prefix, struct wlr_xdg_surface *surface) {
+	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
+	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
+
+       if (!surface) {		std::cout << prefix << " xdg_surface=null" << std::endl;
+		return;
+	}
+
+	std::cout
+		<< prefix
+		<< " xdg_surface=" << surface
+		<< " role=" << xdg_role_name(surface->role)
+		<< " geometry=(" << surface->geometry.x << "," << surface->geometry.y
+		<< " " << surface->geometry.width << "x" << surface->geometry.height << ")";
+
+	if (surface->surface) {
+		std::cout
+			<< " surface=" << surface->surface
+			<< " buffer=" << surface->surface->current.buffer_width
+			<< "x" << surface->surface->current.buffer_height;
+	}
+
+	std::cout << std::endl;
+}
 
 void WlrXdgShell::handle_new_surface(
 		struct wl_listener *listener, void *data) {
 	WlrXdgShell *xdg_shell = wl_container_of(
 			listener, xdg_shell, new_surface);
+	log_xdg_surface_event("WlrXdgShell::handle_new_surface", (struct wlr_xdg_surface *)data);
 	auto surface = WlrXdgSurface::from_wlr_xdg_surface(
 			(struct wlr_xdg_surface *)data);
 	//std::cout << "WlrXdgShell::handle_new_surface called w/surface: " << surface << std::endl;
@@ -277,7 +318,7 @@ void WlrXdgSurface::handle_map(
 		struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(
 			listener, xdg_surface, map);
-  //std::cout << "WlrXdgSurface::handle_map(..) called w/xdg_surface: " << xdg_surface << std::endl;
+	log_xdg_surface_event("WlrXdgSurface::handle_map", xdg_surface->wlr_xdg_surface);
 	xdg_surface->emit_signal("map", xdg_surface);
 }
 
@@ -303,6 +344,10 @@ void WlrXdgSurface::handle_ping_timeout(struct wl_listener *listener, void *data
 void WlrXdgSurface::handle_new_popup(struct wl_listener *listener, void *data) {
 	WlrXdgSurface *xdg_surface = wl_container_of(listener, xdg_surface, new_popup);
 	struct wlr_xdg_popup *xdg_popup = (struct wlr_xdg_popup *)data;
+	log_xdg_surface_event("WlrXdgSurface::handle_new_popup.parent", xdg_surface->wlr_xdg_surface);
+	if (xdg_popup) {
+		log_xdg_surface_event("WlrXdgSurface::handle_new_popup.popup", xdg_popup->base);
+	}
 	WlrXdgSurface *popup_surface =
 		WlrXdgSurface::from_wlr_xdg_surface(xdg_popup->base);
 	xdg_surface->emit_signal("new_popup", popup_surface);

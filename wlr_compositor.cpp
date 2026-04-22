@@ -5,12 +5,30 @@
 #include "wlr_backend.h"
 #include "wlr_surface.h"
 #include <iostream>
+#include <stdlib.h>
+
 extern "C" {
 #include <wlr/types/wlr_compositor.h>
 
+static void log_wlr_surface_spawn(const char *prefix, struct wlr_surface *surface) {
+	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
+	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
+
+       if (!surface) {		std::cout << prefix << " surface=null" << std::endl;
+		return;
+	}
+
+	std::cout
+		<< prefix
+		<< " surface=" << surface
+		<< " size=" << surface->current.width << "x" << surface->current.height
+		<< " buffer=" << surface->current.buffer_width << "x" << surface->current.buffer_height
+		<< std::endl;
+}
+
 void WlrCompositor::handle_new_surface(
 		struct wl_listener *listener, void *data) {
-	//std::cout << "WlrCompositor::handle_new_surface(..): " << (struct wlr_surface *)data << std::endl;
+	log_wlr_surface_spawn("WlrCompositor::handle_new_surface", (struct wlr_surface *)data);
 	WlrCompositor *compositor = wl_container_of(
 			listener, compositor, new_surface);
 	auto surface = WlrSurface::from_wlr_surface((struct wlr_surface *)data);
