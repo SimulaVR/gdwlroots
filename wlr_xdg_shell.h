@@ -13,6 +13,8 @@ extern "C" {
 
 typedef void (*surface_iter_t)(WlrSurface * surface, int sx, int s);
 
+class WlrXdgSurface;
+
 class WlrXdgPopup : public Object {
 	GDCLASS(WlrXdgPopup, Object);
 
@@ -108,6 +110,8 @@ public:
 	WlrXdgToplevelState *get_server_pending_state() const;
 	WlrXdgToplevelState *get_current_state() const;
 	WlrXdgToplevel *get_parent() const;
+	WlrXdgSurface *get_xdg_surface() const;
+	bool has_parent() const;
 	String get_title() const;
 	String get_app_id() const;
 

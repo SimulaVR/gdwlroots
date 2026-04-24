@@ -29,8 +29,24 @@ static void log_wlr_surface_event(const char *prefix, struct wlr_surface *surfac
 		<< prefix
 		<< " surface=" << surface
 		<< " size=" << surface->current.width << "x" << surface->current.height
-		<< " buffer=" << surface->current.buffer_width << "x" << surface->current.buffer_height
-		<< std::endl;
+		<< " buffer=" << surface->current.buffer_width << "x" << surface->current.buffer_height;
+
+	if (wlr_surface_is_subsurface(surface)) {
+		struct wlr_subsurface *subsurface = wlr_subsurface_from_wlr_surface(surface);
+		std::cout << " parent=" << (subsurface ? subsurface->parent : NULL);
+	} else if (wlr_surface_is_xdg_surface(surface)) {
+		struct wlr_xdg_surface *xdg_surface = wlr_xdg_surface_from_wlr_surface(surface);
+		if (xdg_surface && xdg_surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL && xdg_surface->toplevel) {
+			std::cout << " parent=" << xdg_surface->toplevel->parent;
+		} else if (xdg_surface && xdg_surface->role == WLR_XDG_SURFACE_ROLE_POPUP && xdg_surface->popup) {
+			std::cout << " parent=" << xdg_surface->popup->parent;
+		}
+	} else if (wlr_surface_is_xwayland_surface(surface)) {
+		struct wlr_xwayland_surface *xwayland_surface = wlr_xwayland_surface_from_wlr_surface(surface);
+		std::cout << " parent=" << (xwayland_surface ? xwayland_surface->parent : NULL);
+	}
+
+	std::cout << std::endl;
 }
 
 static void log_wlr_subsurface_event(const char *prefix, struct wlr_subsurface *subsurface) {

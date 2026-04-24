@@ -103,6 +103,7 @@ class WlrXWaylandSurface: public Resource {
 	/* WlrXWaylandSurface *get_server_pending_state() const; */
 	/* WlrXWaylandSurface *get_current_state() const; */
 	WlrXWaylandSurface *get_parent() const;
+	bool has_parent() const;
 	String get_title() const;
 	/* String get_app_id() const; */
 

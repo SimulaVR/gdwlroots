@@ -41,6 +41,12 @@ static void log_xdg_surface_event(const char *prefix, struct wlr_xdg_surface *su
 		<< " geometry=(" << surface->geometry.x << "," << surface->geometry.y
 		<< " " << surface->geometry.width << "x" << surface->geometry.height << ")";
 
+	if (surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL && surface->toplevel) {
+		std::cout << " parent=" << surface->toplevel->parent;
+	} else if (surface->role == WLR_XDG_SURFACE_ROLE_POPUP && surface->popup) {
+		std::cout << " parent=" << surface->popup->parent;
+	}
+
 	if (surface->surface) {
 		std::cout
 			<< " surface=" << surface->surface
@@ -487,6 +493,7 @@ void WlrXdgToplevel::handle_set_parent(
 		struct wl_listener *listener, void *data) {
 	//std::cout << "WlrXdgTopLevel::handle_set_parent" << std::endl;
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(listener, xdg_toplevel, set_parent);
+	log_xdg_surface_event("WlrXdgToplevel::handle_set_parent", xdg_toplevel->wlr_xdg_toplevel->base);
 	xdg_toplevel->emit_signal("set_parent", xdg_toplevel);
 }
 
@@ -538,10 +545,11 @@ WlrXdgToplevel::WlrXdgToplevel(struct wlr_xdg_toplevel *xdg_toplevel) {
 
 WlrXdgToplevel *WlrXdgToplevel::from_wlr_xdg_toplevel(
 		struct wlr_xdg_toplevel *xdg_toplevel) {
-	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_toplevel->base->data;
   if (!xdg_toplevel) {
     return NULL;
-	} else if (surface->toplevel) {
+	}
+	WlrXdgSurface *surface = (WlrXdgSurface *)xdg_toplevel->base->data;
+	if (surface && surface->toplevel) {
 		return surface->toplevel;
 	}
 	return new WlrXdgToplevel(xdg_toplevel);
@@ -551,7 +559,21 @@ WlrXdgToplevel *WlrXdgToplevel::get_parent() const {
   if (!wlr_xdg_toplevel) {
     return NULL;
   }
+  if (!wlr_xdg_toplevel->parent) {
+    return NULL;
+  }
 	return from_wlr_xdg_toplevel(wlr_xdg_toplevel->parent->toplevel);
+}
+
+WlrXdgSurface *WlrXdgToplevel::get_xdg_surface() const {
+  if (!wlr_xdg_toplevel) {
+    return NULL;
+  }
+	return WlrXdgSurface::from_wlr_xdg_surface(wlr_xdg_toplevel->base);
+}
+
+bool WlrXdgToplevel::has_parent() const {
+	return wlr_xdg_toplevel && wlr_xdg_toplevel->parent;
 }
 
 String WlrXdgToplevel::get_app_id() const {
@@ -625,6 +647,8 @@ bool WlrXdgToplevel::is_valid() {
 
 void WlrXdgToplevel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXdgToplevel::get_parent);
+	ClassDB::bind_method(D_METHOD("get_xdg_surface"), &WlrXdgToplevel::get_xdg_surface);
+	ClassDB::bind_method(D_METHOD("has_parent"), &WlrXdgToplevel::has_parent);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXdgToplevel::get_title);
 	ClassDB::bind_method(D_METHOD("get_app_id"), &WlrXdgToplevel::get_app_id);
 	ClassDB::bind_method(D_METHOD("set_size", "size"),

@@ -368,6 +368,14 @@ void WlrXWaylandSurface::handle_unmap(
 																								1,
 																								NET_WM_WINDOW_TYPE_MENU);
 
+		log_xwayland_surface_event(
+			"WlrXWaylandSurface::handle_unmap",
+			xwayland_surface->wlr_xwayland_surface,
+			xwayland_route_name(is_splash_surface,
+												 is_normal_surface,
+												 is_menu_surface,
+												 xwayland_surface->wlr_xwayland_surface));
+
 		//roughly mirrors our logic in handle_map
 		if ( is_splash_surface ) {
 			//std::cout << "handle_unmap(..) splash surface -> unmap" << std::endl;
@@ -445,6 +453,8 @@ void WlrXWaylandSurface::handle_set_parent(
 	//std::cout << "WlrXWaylandSurface::handle_set_parent(..)" << std::endl;
   WlrXWaylandSurface *xwayland_surface = wl_container_of(
       listener, xwayland_surface, set_parent);
+	log_xwayland_surface_event("WlrXWaylandSurface::handle_set_parent",
+		xwayland_surface->wlr_xwayland_surface);
   xwayland_surface->emit_signal("set_parent", xwayland_surface);
 }
 
@@ -486,6 +496,10 @@ WlrXWaylandSurface *WlrXWaylandSurface::get_parent() const {
 		return NULL;
 	}
   return from_wlr_xwayland_surface(wlr_xwayland_surface->parent);
+}
+
+bool WlrXWaylandSurface::has_parent() const {
+	return wlr_xwayland_surface && wlr_xwayland_surface->parent;
 }
 
 String WlrXWaylandSurface::get_title() const {
@@ -689,6 +703,7 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_max_height"), &WlrXWaylandSurface::get_max_height);
 	ClassDB::bind_method(D_METHOD("get_children"), &WlrXWaylandSurface::get_children);
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXWaylandSurface::get_parent);
+	ClassDB::bind_method(D_METHOD("has_parent"), &WlrXWaylandSurface::has_parent);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXWaylandSurface::get_title);
 	ClassDB::bind_method(D_METHOD("set_size", "size"), &WlrXWaylandSurface::set_size);
 	ClassDB::bind_method(D_METHOD("set_xy", "size"), &WlrXWaylandSurface::set_xy);
