@@ -31,6 +31,8 @@ extern "C" {
 
 }
 
+char *xwm_get_atom_name(struct wlr_xwm *xwm, xcb_atom_t atom);
+
 static const char *xwayland_route_name(bool is_splash_surface,
 																			 bool is_normal_surface,
 																			 bool is_menu_surface,
@@ -80,6 +82,67 @@ static void log_xwayland_surface_event(const char *prefix,
 
 	if (route != NULL) {
 		std::cout << " route=" << route;
+	}
+
+	std::cout
+		<< " override_redirect=" << surface->override_redirect
+		<< " decorations=" << surface->decorations
+		<< " role=" << (surface->role ? surface->role : "null")
+		<< " title=" << (surface->title ? surface->title : "null")
+		<< " class=" << (surface->c_class ? surface->c_class : "null")
+		<< " instance=" << (surface->instance ? surface->instance : "null");
+
+	std::cout << " window_type=[";
+	if (surface->xwm && surface->window_type) {
+		for (size_t i = 0; i < surface->window_type_len; ++i) {
+			char *atom_name = xwm_get_atom_name(surface->xwm, surface->window_type[i]);
+			if (i > 0) {
+				std::cout << ",";
+			}
+			std::cout << (atom_name ? atom_name : "unknown");
+			free(atom_name);
+		}
+	}
+	std::cout << "]";
+
+	std::cout << " protocols=[";
+	if (surface->xwm && surface->protocols) {
+		for (size_t i = 0; i < surface->protocols_len; ++i) {
+			char *atom_name = xwm_get_atom_name(surface->xwm, surface->protocols[i]);
+			if (i > 0) {
+				std::cout << ",";
+			}
+			std::cout << (atom_name ? atom_name : "unknown");
+			free(atom_name);
+		}
+	}
+	std::cout << "]";
+
+	if (surface->hints) {
+		std::cout
+			<< " hints={flags=" << surface->hints->flags
+			<< ",input=" << surface->hints->input
+			<< ",initial_state=" << surface->hints->initial_state
+			<< ",window_group=" << surface->hints->window_group
+			<< ",urgency=" << surface->hints_urgency
+			<< "}";
+	} else {
+		std::cout << " hints=null";
+	}
+
+	if (surface->size_hints) {
+		std::cout
+			<< " size_hints={flags=" << surface->size_hints->flags
+			<< ",pos=(" << surface->size_hints->x << "," << surface->size_hints->y << ")"
+			<< ",size=" << surface->size_hints->width << "x" << surface->size_hints->height
+			<< ",min=" << surface->size_hints->min_width << "x" << surface->size_hints->min_height
+			<< ",max=" << surface->size_hints->max_width << "x" << surface->size_hints->max_height
+			<< ",base=" << surface->size_hints->base_width << "x" << surface->size_hints->base_height
+			<< ",inc=" << surface->size_hints->width_inc << "x" << surface->size_hints->height_inc
+			<< ",gravity=" << surface->size_hints->win_gravity
+			<< "}";
+	} else {
+		std::cout << " size_hints=null";
 	}
 
 	std::cout << std::endl;
