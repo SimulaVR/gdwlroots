@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h>
+#include <string.h>
 
 
 extern "C" {
@@ -151,7 +152,7 @@ static void log_xwayland_surface_event(const char *prefix,
 bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 												size_t num_atoms, enum atom_name needle) {
 
-	if(xwm->atoms == NULL || atoms == NULL) {
+	if(xwm == NULL || xwm->atoms == NULL || atoms == NULL) {
 		return false;
 	}
 
@@ -159,6 +160,25 @@ bool xwm_atoms_contains(struct wlr_xwm *xwm, xcb_atom_t *atoms,
 
 	for (size_t i = 0; i < num_atoms; ++i) {
 		if (atom == atoms[i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool xwayland_surface_has_window_type_name(
+		struct wlr_xwayland_surface *surface,
+		const char *needle) {
+	if (!surface || !surface->xwm || !surface->window_type || !needle) {
+		return false;
+	}
+
+	for (size_t i = 0; i < surface->window_type_len; ++i) {
+		char *atom_name = xwm_get_atom_name(surface->xwm, surface->window_type[i]);
+		bool matches = atom_name && strcmp(atom_name, needle) == 0;
+		free(atom_name);
+		if (matches) {
 			return true;
 		}
 	}
@@ -565,6 +585,23 @@ bool WlrXWaylandSurface::has_parent() const {
 	return wlr_xwayland_surface && wlr_xwayland_surface->parent;
 }
 
+// override_redirect=true means the client is asking the window
+// manager/compositor not to manage this window normally
+bool WlrXWaylandSurface::get_override_redirect() const {
+	if (!wlr_xwayland_surface) {
+		return false;
+	}
+
+	return wlr_xwayland_surface->override_redirect;
+}
+
+bool WlrXWaylandSurface::has_window_type_name(String type_name) const {
+	CharString type_name_utf8 = type_name.utf8(); // Used to convert String into a C string
+	return xwayland_surface_has_window_type_name(
+			wlr_xwayland_surface,
+			type_name_utf8.get_data());
+}
+
 String WlrXWaylandSurface::get_title() const {
 	if (!wlr_xwayland_surface) {
 		return String();
@@ -767,6 +804,8 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_children"), &WlrXWaylandSurface::get_children);
 	ClassDB::bind_method(D_METHOD("get_parent"), &WlrXWaylandSurface::get_parent);
 	ClassDB::bind_method(D_METHOD("has_parent"), &WlrXWaylandSurface::has_parent);
+	ClassDB::bind_method(D_METHOD("get_override_redirect"), &WlrXWaylandSurface::get_override_redirect);
+	ClassDB::bind_method(D_METHOD("has_window_type_name", "type_name"), &WlrXWaylandSurface::has_window_type_name);
 	ClassDB::bind_method(D_METHOD("get_title"), &WlrXWaylandSurface::get_title);
 	ClassDB::bind_method(D_METHOD("set_size", "size"), &WlrXWaylandSurface::set_size);
 	ClassDB::bind_method(D_METHOD("set_xy", "size"), &WlrXWaylandSurface::set_xy);

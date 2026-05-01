@@ -104,6 +104,8 @@ class WlrXWaylandSurface: public Resource {
 	/* WlrXWaylandSurface *get_current_state() const; */
 	WlrXWaylandSurface *get_parent() const;
 	bool has_parent() const;
+	bool get_override_redirect() const;
+	bool has_window_type_name(String type_name) const;
 	String get_title() const;
 	/* String get_app_id() const; */
 
