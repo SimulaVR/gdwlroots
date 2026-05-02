@@ -92,12 +92,14 @@ class WlrXWaylandSurface: public Resource {
 	uint16_t get_width() const;
 	uint16_t get_height() const;
 	uint16_t get_min_width() const;
-	uint16_t get_min_height() const;
-	uint16_t get_max_width() const;
-	uint16_t get_max_height() const;
-	int16_t get_x() const;
-	void print_xwayland_surface_properties();
-	int16_t get_y() const;
+		uint16_t get_min_height() const;
+		uint16_t get_max_width() const;
+		uint16_t get_max_height() const;
+		int16_t get_surface_origin_x() const;
+		int16_t get_surface_origin_y() const;
+		int16_t get_visible_geometry_origin_x() const;
+		int16_t get_visible_geometry_origin_y() const;
+		void print_xwayland_surface_properties();
 
 	/* WlrXWaylandSurface *get_client_pending_state() const; */
 	/* WlrXWaylandSurface *get_server_pending_state() const; */

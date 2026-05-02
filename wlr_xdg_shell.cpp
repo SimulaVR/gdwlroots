@@ -790,18 +790,26 @@ Rect2 WlrXdgPopup::get_geometry() {
 							 wlr_xdg_popup->geometry.width, wlr_xdg_popup->geometry.height);
 }
 
-int WlrXdgPopup::get_x() {
+int WlrXdgPopup::get_visible_geometry_origin_x() {
 	int tsx;
 	int tsy;
 	wlr_xdg_popup_get_toplevel_coords(wlr_xdg_popup, wlr_xdg_popup->geometry.x, wlr_xdg_popup->geometry.y, &tsx, &tsy);
 	return tsx;
 }
 
-int WlrXdgPopup::get_y() {
+int WlrXdgPopup::get_visible_geometry_origin_y() {
 	int tsx;
 	int tsy;
 	wlr_xdg_popup_get_toplevel_coords(wlr_xdg_popup, wlr_xdg_popup->geometry.x, wlr_xdg_popup->geometry.y, &tsx, &tsy);
 	return tsy;
+}
+
+int WlrXdgPopup::get_surface_origin_x() {
+	return get_visible_geometry_origin_x() - wlr_xdg_popup->base->geometry.x;
+}
+
+int WlrXdgPopup::get_surface_origin_y() {
+	return get_visible_geometry_origin_y() - wlr_xdg_popup->base->geometry.y;
 }
 
 int WlrXdgPopup::get_width() {
@@ -823,10 +831,14 @@ WlrXdgPopup *WlrXdgPopup::from_wlr_xdg_popup(struct wlr_xdg_popup *xdg_popup) {
 }
 
 void WlrXdgPopup::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_x"),
-											 &WlrXdgPopup::get_x);
-	ClassDB::bind_method(D_METHOD("get_y"),
-											 &WlrXdgPopup::get_y);
+	ClassDB::bind_method(D_METHOD("get_surface_origin_x"),
+											 &WlrXdgPopup::get_surface_origin_x);
+	ClassDB::bind_method(D_METHOD("get_surface_origin_y"),
+											 &WlrXdgPopup::get_surface_origin_y);
+	ClassDB::bind_method(D_METHOD("get_visible_geometry_origin_x"),
+											 &WlrXdgPopup::get_visible_geometry_origin_x);
+	ClassDB::bind_method(D_METHOD("get_visible_geometry_origin_y"),
+											 &WlrXdgPopup::get_visible_geometry_origin_y);
 	ClassDB::bind_method(D_METHOD("get_height"),
 											 &WlrXdgPopup::get_height);
 	ClassDB::bind_method(D_METHOD("get_width"),

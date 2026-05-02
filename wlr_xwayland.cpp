@@ -694,18 +694,32 @@ String WlrXWaylandSurface::get_role() const {
   return wlr_xwayland_surface->role;
 }
 
-int16_t WlrXWaylandSurface::get_x() const {
+int16_t WlrXWaylandSurface::get_surface_origin_x() const {
 	if (!wlr_xwayland_surface) {
 		return -1;
 	}
   return wlr_xwayland_surface->x;
 }
 
-int16_t WlrXWaylandSurface::get_y() const {
+int16_t WlrXWaylandSurface::get_surface_origin_y() const {
 	if (!wlr_xwayland_surface) {
 		return -1;
 	}
   return wlr_xwayland_surface->y;
+}
+
+int16_t WlrXWaylandSurface::get_visible_geometry_origin_x() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
+	return wlr_xwayland_surface->x;
+}
+
+int16_t WlrXWaylandSurface::get_visible_geometry_origin_y() const {
+	if (!wlr_xwayland_surface) {
+		return -1;
+	}
+	return wlr_xwayland_surface->y;
 }
 
 void WlrXWaylandSurface::print_xwayland_surface_properties() {
@@ -797,8 +811,10 @@ void WlrXWaylandSurface::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_fullscreen"), &WlrXWaylandSurface::get_fullscreen);
 	ClassDB::bind_method(D_METHOD("get_width"), &WlrXWaylandSurface::get_width);
 	ClassDB::bind_method(D_METHOD("get_height"), &WlrXWaylandSurface::get_height);
-	ClassDB::bind_method(D_METHOD("get_x"), &WlrXWaylandSurface::get_x);
-	ClassDB::bind_method(D_METHOD("get_y"), &WlrXWaylandSurface::get_y);
+	ClassDB::bind_method(D_METHOD("get_surface_origin_x"), &WlrXWaylandSurface::get_surface_origin_x);
+	ClassDB::bind_method(D_METHOD("get_surface_origin_y"), &WlrXWaylandSurface::get_surface_origin_y);
+	ClassDB::bind_method(D_METHOD("get_visible_geometry_origin_x"), &WlrXWaylandSurface::get_visible_geometry_origin_x);
+	ClassDB::bind_method(D_METHOD("get_visible_geometry_origin_y"), &WlrXWaylandSurface::get_visible_geometry_origin_y);
 	ClassDB::bind_method(D_METHOD("terminate"), &WlrXWaylandSurface::terminate);
 	ClassDB::bind_method(D_METHOD("print_xwayland_surface_properties"), &WlrXWaylandSurface::print_xwayland_surface_properties);
 	ClassDB::bind_method(D_METHOD("get_min_width"), &WlrXWaylandSurface::get_min_width);

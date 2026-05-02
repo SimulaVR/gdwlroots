@@ -27,8 +27,10 @@ protected:
 	WlrXdgPopup(struct wlr_xdg_popup *xdg_popup);
 
 public:
-	int get_x();
-	int get_y();
+	int get_surface_origin_x();
+	int get_surface_origin_y();
+	int get_visible_geometry_origin_x();
+	int get_visible_geometry_origin_y();
 	int get_width();
 	int get_height();
 	Rect2 get_geometry();
