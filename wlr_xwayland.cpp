@@ -307,6 +307,10 @@ Rect2 WlrXWaylandSurface::get_geometry() {
 	if (!wlr_xwayland_surface) {
 		return Rect2(-1, -1, -1, -1);
 	}
+	// Unlike xdg surfaces, XWayland surfaces do not expose a separate
+	// surface-local visible-geometry offset. But we return a zero-origin rect here
+	// anyway so callers can still use the same geometry-aware formulas as the xdg path
+	// for symmetry purposes.
 	return Rect2(0, 0, wlr_xwayland_surface->width, wlr_xwayland_surface->height);
 }
 
