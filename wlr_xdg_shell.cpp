@@ -26,11 +26,31 @@ static const char *xdg_role_name(enum wlr_xdg_surface_role role) {
 	}
 }
 
+static void log_xdg_toplevel_state(const char *name,
+		const struct wlr_xdg_toplevel_state *state) {
+	if (!state) {
+		std::cout << " " << name << "=null";
+		return;
+	}
+
+	std::cout
+		<< " " << name << "={size=" << state->width << "x" << state->height
+		<< ",min=" << state->min_width << "x" << state->min_height
+		<< ",max=" << state->max_width << "x" << state->max_height
+		<< ",maximized=" << state->maximized
+		<< ",fullscreen=" << state->fullscreen
+		<< ",resizing=" << state->resizing
+		<< ",activated=" << state->activated
+		<< ",tiled=" << state->tiled
+		<< "}";
+}
+
 static void log_xdg_surface_event(const char *prefix, struct wlr_xdg_surface *surface) {
 	const char *debug_env = getenv("SIMULA_DEBUG_SURFACE_CREATIONS");
 	if (debug_env == NULL || debug_env[0] != '1' || debug_env[1] != '\0') return;
 
-       if (!surface) {		std::cout << prefix << " xdg_surface=null" << std::endl;
+	if (!surface) {
+		std::cout << prefix << " xdg_surface=null" << std::endl;
 		return;
 	}
 
@@ -42,9 +62,21 @@ static void log_xdg_surface_event(const char *prefix, struct wlr_xdg_surface *su
 		<< " " << surface->geometry.width << "x" << surface->geometry.height << ")";
 
 	if (surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL && surface->toplevel) {
-		std::cout << " parent=" << surface->toplevel->parent;
+		std::cout
+			<< " parent=" << surface->toplevel->parent
+			<< " title=" << (surface->toplevel->title ? surface->toplevel->title : "null")
+			<< " app_id=" << (surface->toplevel->app_id ? surface->toplevel->app_id : "null");
+		if (surface->toplevel->parent) {
+			std::cout << " parent_surface=" << surface->toplevel->parent->surface;
+		}
+		log_xdg_toplevel_state("current", &surface->toplevel->current);
+		log_xdg_toplevel_state("server_pending", &surface->toplevel->server_pending);
+		log_xdg_toplevel_state("client_pending", &surface->toplevel->client_pending);
 	} else if (surface->role == WLR_XDG_SURFACE_ROLE_POPUP && surface->popup) {
-		std::cout << " parent=" << surface->popup->parent;
+		std::cout
+			<< " parent=" << surface->popup->parent
+			<< " geometry=(" << surface->popup->geometry.x << "," << surface->popup->geometry.y
+			<< " " << surface->popup->geometry.width << "x" << surface->popup->geometry.height << ")";
 	}
 
 	if (surface->surface) {
@@ -501,6 +533,7 @@ void WlrXdgToplevel::handle_set_title(
 		struct wl_listener *listener, void *data) {
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
 			listener, xdg_toplevel, set_title);
+	log_xdg_surface_event("WlrXdgToplevel::handle_set_title", xdg_toplevel->wlr_xdg_toplevel->base);
 	xdg_toplevel->emit_signal("set_title", xdg_toplevel);
 }
 
@@ -508,6 +541,7 @@ void WlrXdgToplevel::handle_set_app_id(
 		struct wl_listener *listener, void *data) {
 	WlrXdgToplevel *xdg_toplevel = wl_container_of(
 			listener, xdg_toplevel, set_app_id);
+	log_xdg_surface_event("WlrXdgToplevel::handle_set_app_id", xdg_toplevel->wlr_xdg_toplevel->base);
 	xdg_toplevel->emit_signal("set_app_id", xdg_toplevel);
 }
 
