@@ -1,5 +1,6 @@
 #ifndef GDWLR_WLR_BACKEND_H
 #define GDWLR_WLR_BACKEND_H
+#include "core/dictionary.h"
 #include "scene/main/node.h"
 #include "wayland_display.h"
 #include "renderer.h"
@@ -25,6 +26,7 @@ protected:
 public:
 	struct wlr_backend *get_wlr_backend();
 	struct WlrRenderer *get_renderer();
+	Dictionary get_live_object_dictionary();
 
 	WlrBackend();
 	~WlrBackend();
